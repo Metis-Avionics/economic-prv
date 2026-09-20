@@ -11,6 +11,10 @@ description = "Command-line interface for the prv Spec-and-Go workflow"
 name = "prv-cli"
 path = "src/main.rs"
 
+[[example]]
+name = "run_pipeline"
+path = "examples/run_pipeline.rs"
+
 [dependencies]
 prv-core = { path = "../core", version = "0.1.0" }
 prv-filter = { path = "../filter", version = "0.1.0" }
@@ -19,6 +23,7 @@ prv-policy = { path = "../policy", version = "0.1.0" }
 prv-geometry = { path = "../geometry", version = "0.1.0" }
 prv-data = { path = "../data", version = "0.1.0" }
 prv-evaluation = { path = "../evaluation", version = "0.1.0" }
+nalgebra.workspace = true
 clap.workspace = true
 toml_edit.workspace = true
 serde.workspace = true

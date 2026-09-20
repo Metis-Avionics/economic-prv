@@ -10,32 +10,49 @@ Research-grade economic simulation with EKF, Monte Carlo, and Spec-and-Go method
 
 | Crate | Description |
 |-------|-------------|
-| `prv-core` | Core domain types, state, regime, observation, and time-series abstractions |
-| `prv-filter` | Extended Kalman Filter (EKF) and observation/transition models |
-| `prv-monte-carlo` | Monte Carlo shock simulation and probability estimation |
-| `prv-policy` | Policy engine, instrument weights, and bias distributions |
-| `prv-geometry` | Quaternion state geometry and comparison utilities |
-| `prv-data` | CSV/JSON data loading and DataFrame abstractions |
-| `prv-evaluation` | Backtesting, metrics, and model evaluation |
-| `prv-cli` | Command-line interface for Spec-and-Go workflow |
+| `prv-core` | Core domain types: `State`, `Regime`, `Observation`, `TimeSeries`, `PressureReleaseValve` |
+| `prv-filter` | Extended Kalman Filter (EKF) with configurable transition and observation models |
+| `prv-monte-carlo` | Monte Carlo shock simulation via Cholesky decomposition with eigenvalue fallback |
+| `prv-policy` | Stochastic policy engine producing `PolicyDistribution` outputs |
+| `prv-geometry` | Quaternion-based state geometry and baseline comparison |
+| `prv-data` | CSV/JSON ingestion, `DataFrame` abstraction, preprocessing, and observation conversion |
+| `prv-evaluation` | Backtesting, metrics (RMSE, MAE, Brier, log-loss), and baseline comparison |
+| `prv-cli` | Spec-and-Go CLI (`spec validate`, `living update`, `session handover`, `status`) |
+
+## Quick Start
+
+```bash
+# Build everything
+cargo build --all
+
+# Run the full pipeline demo with faux data
+cargo run --example run_pipeline -p prv-cli
+
+# Run tests
+cargo test --workspace
+
+# Lint
+cargo clippy --workspace --all-targets
+```
+
+## Pipeline Demo
+
+The workspace ships with `examples/faux_data.csv` (20 quarterly observations across 13 series) and `crates/cli/examples/run_pipeline.rs`, which wires the full stack:
+
+```
+DataLoader::load_historical  →  DataFrame
+DataLoader::to_observations  →  Vec<Observation<10>>
+Ekf::predict / update        →  State estimate
+Simulator::simulate          →  MonteCarloResults
+PolicyEngine::evaluate       →  PolicyDistribution
+Evaluator::backtest          →  EvaluationResults
+```
 
 ## Requirements
 
 - Rust 1.98+
 - Cargo
 - Optional: Docker/Podman for HelixDB instance (for Spec-and-Go tooling)
-
-## Building
-
-```bash
-cargo build --all
-```
-
-## Testing
-
-```bash
-cargo test --all
-```
 
 ## License
 
