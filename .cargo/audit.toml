@@ -1,0 +1,16 @@
+# cargo-audit advisory exceptions (cargo-deny's own deny.toml is separate).
+#
+# Each entry: id + terse justification. Mirrors the policy in
+# deny.toml [advisories].ignore — keep both files in sync.
+
+[advisories]
+ignore = [
+    # RUSTSEC-2024-0384: instant unmaintained, reached only via thesix -> sled -> parking_lot.
+    # PRV's cache layer does not take attacker-controlled timing inputs.
+    # Reassess when sled replaces parking_lot or thesix drops sled.
+    "RUSTSEC-2024-0384",
+    # RUSTSEC-2025-0057: fxhash unmaintained; sled's internal hash function.
+    # No known exploit path; only used in sled's internal in-memory maps.
+    # Reassess when sled / thesix switches to rustc-hash.
+    "RUSTSEC-2025-0057",
+]

@@ -1,0 +1,9 @@
+{
+  "operations": [
+    {
+      "type": "read",
+      "label": "SimulationCase",
+      "limit": 10
+    }
+  ]
+}

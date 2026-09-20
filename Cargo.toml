@@ -9,6 +9,7 @@ members = [
     "crates/data",
     "crates/evaluation",
     "crates/cli",
+    "crates/cache",
 ]
 
 [workspace.package]
@@ -38,3 +39,39 @@ chrono = { version = "0.4", features = ["serde"] }
 thesix = { version = "0.2", features = ["redis", "sled"] }
 themql-core = "0.1"
 themql-runtime = { version = "0.1", features = ["desktop"] }
+tokio = { version = "1", features = ["full"] }
+dashmap = "6.1"
+
+[workspace.lints.rust]
+unsafe_code = "deny"
+unused_must_use = "deny"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+never_loop = "deny"
+while_immutable_condition = "deny"
+infinite_iter = "deny"
+maybe_infinite_iter = "deny"
+empty_loop = "deny"
+missing_asserts_for_indexing = "deny"
+wildcard_imports = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+unwrap_used = "warn"
+expect_used = "warn"
+print_stdout = "warn"
+print_stderr = "warn"
+dbg_macro = "warn"
+use_debug = "warn"
+too_many_lines = "warn"
+cognitive_complexity = "warn"
+shadow_same = "warn"
+shadow_reuse = "warn"
+must_use_candidate = "warn"
+let_underscore_must_use = "warn"
+missing_errors_doc = "warn"
+missing_panics_doc = "warn"

@@ -15,6 +15,7 @@ required_sections_present = true
 dependencies_resolved = true
 no_unresolved_identifiers = true
 all_spec_files_present = true
+tetanus_check = true
 
 [living_generates]
 docs_living_md = "project_overview_architecture_dependencies"

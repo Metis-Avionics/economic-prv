@@ -9,6 +9,10 @@ impl Serialize for State {
     where
         S: serde::Serializer,
     {
+        debug_assert!(
+            self.0.iter().all(|&x| x.is_finite()),
+            "state values must be finite"
+        );
         self.0.as_slice().serialize(serializer)
     }
 }
@@ -100,5 +104,37 @@ impl State {
 impl Default for State {
     fn default() -> Self {
         Self::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    }
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::float_cmp,
+    clippy::cast_precision_loss,
+    clippy::cast_possible_wrap,
+    clippy::cast_lossless,
+    clippy::cast_sign_loss
+)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn state_new_creates_correct_values() {
+        let state = State::new(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0);
+        assert!((state.capacity() - 1.0).abs() < 1e-10);
+        assert!((state.investment() - 2.0).abs() < 1e-10);
+        assert!((state.labour_absorption() - 3.0).abs() < 1e-10);
+        assert!((state.fiscal_capacity() - 4.0).abs() < 1e-10);
+        assert!((state.demand_pressure() - 5.0).abs() < 1e-10);
+        assert!((state.housing_pressure() - 6.0).abs() < 1e-10);
+        assert!((state.geopolitical_load() - 7.0).abs() < 1e-10);
+        assert!((state.migration_pressure() - 8.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn state_default_is_zero() {
+        let state = State::default();
+        assert!((state.capacity() - 0.0).abs() < 1e-10);
+        assert!((state.investment() - 0.0).abs() < 1e-10);
     }
 }

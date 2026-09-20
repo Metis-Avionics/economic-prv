@@ -9,9 +9,14 @@ description = "CSV/JSON data loading and DataFrame abstractions for the prv work
 
 [dependencies]
 prv-core = { path = "../core", version = "0.1.0" }
+prv-cache = { path = "../cache", version = "0.1.0" }
 csv.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 chrono.workspace = true
 tracing.workspace = true
+thesix.workspace = true
+
+[lints]
+workspace = true

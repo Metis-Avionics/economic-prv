@@ -1,5 +1,11 @@
 #![forbid(unsafe_code)]
-#![warn(clippy::pedantic, clippy::nursery)]
+#![deny(clippy::unwrap_used, clippy::expect_used)]
+#![deny(
+    clippy::print_stdout,
+    clippy::print_stderr,
+    clippy::dbg_macro,
+    clippy::use_debug
+)]
 
 pub mod error;
 pub mod observation;

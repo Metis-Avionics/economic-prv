@@ -27,5 +27,6 @@ anyhow.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 thesix.workspace = true
-themql-core.workspace = true
-themql-runtime.workspace = true
+
+[lints]
+workspace = true

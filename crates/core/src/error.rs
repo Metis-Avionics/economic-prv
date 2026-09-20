@@ -5,6 +5,9 @@ pub enum PrvError {
     #[error("Invalid time series: timestamps length {timestamps} != values length {values}")]
     InvalidTimeSeries { timestamps: usize, values: usize },
 
+    #[error("Invalid frequency: expected quarterly, got {got}")]
+    InvalidFrequency { got: String },
+
     #[error("Invalid state dimension: expected 8, got {got}")]
     InvalidStateDimension { got: usize },
 

@@ -29,3 +29,26 @@ impl Regime {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn regime_classification_structural_shock() {
+        let state = State::new(1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0);
+        assert_eq!(Regime::from_pressure(&state), Regime::StructuralShock);
+    }
+
+    #[test]
+    fn regime_classification_saturation() {
+        let state = State::new(1.0, 1.0, 1.0, 1.0, 0.5, 0.5, 0.2, 0.0);
+        assert_eq!(Regime::from_pressure(&state), Regime::Saturation);
+    }
+
+    #[test]
+    fn regime_classification_contraction() {
+        let state = State::new(1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
+        assert_eq!(Regime::from_pressure(&state), Regime::Contraction);
+    }
+}
