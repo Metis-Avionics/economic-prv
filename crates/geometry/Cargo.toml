@@ -1,0 +1,15 @@
+[package]
+name = "prv-geometry"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+prv-core = { path = "../core", version = "0.1.0" }
+prv-monte-carlo = { path = "../monte_carlo", version = "0.1.0" }
+nalgebra.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true

@@ -1,0 +1,26 @@
+[cli]
+name = "prv-cli"
+binary = "prv-cli"
+framework = "clap_derive"
+
+[commands]
+spec = ["start", "validate", "plan"]
+living = ["update"]
+session = ["handover"]
+status = []
+
+[spec_validate_checks]
+valid_toml = true
+required_sections_present = true
+dependencies_resolved = true
+no_unresolved_identifiers = true
+all_spec_files_present = true
+
+[living_generates]
+docs_living_md = "project_overview_architecture_dependencies"
+docs_changelog_md = "spec_changes_architecture_model_changes"
+docs_session_md = "current_turn_phase_loaded_specs_actions_taken"
+docs_handover_md = "completed_changed_validated_next_action_open_questions"
+
+[validation_policy]
+markdown_not_manually_edited = true

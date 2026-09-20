@@ -1,0 +1,16 @@
+[theSix]
+crate_name = "thesix"
+version = "0.2.3"
+source = "crates-io"
+verified = "2026-09-20"
+features = ["redis", "sled"]
+role = "data-access-and-cache-abstraction"
+
+[theMQL]
+crate_name = "themql-runtime"
+version = "0.1.0"
+source = "crates-io"
+verified = "2026-09-20"
+features = ["desktop"]
+companion_crates = ["themql-core"]
+role = "message-query-and-dispatch"

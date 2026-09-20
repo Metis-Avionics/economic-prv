@@ -1,0 +1,36 @@
+[evaluation]
+backtest_window = "rolling_out_of_sample"
+baselines = ["Naive", "MovingAverage", "LinearStateModel", "NonQuaternionStateModel"]
+
+[metrics]
+calibration_score = true
+brier_score = true
+log_loss = true
+rmse = true
+mae = true
+regime_detection_accuracy = true
+false_transition_rate = true
+tail_risk_error = true
+
+[ekf_validation]
+innovation_consistency = true
+covariance_stability = true
+state_bound_check = true
+
+[monte_carlo_validation]
+seed_reproducibility = true
+distribution_stability = true
+sample_convergence = true
+
+[policy_validation]
+counterfactual_integrity = true
+constraint_integrity = true
+policy_sensitivity = true
+shock_sensitivity = true
+
+[research_integrity]
+invariants = [
+    "simulation_not_equal_to_forecast",
+    "correlation_not_equal_to_causation"
+]
+invariant_enforcement = "compile_time_tests"

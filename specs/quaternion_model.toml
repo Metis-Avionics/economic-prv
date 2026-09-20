@@ -1,0 +1,20 @@
+[quaternion]
+state_dim = 4
+encoding = "UnitQuaternion<f64>"
+mapping = "capacity_investment->xy, demand->z, pressure->w"
+unit_norm_enforced = true
+zero_quaternion_rejected = true
+normalization = "explicit_normalize_after_multiplication"
+
+[transition]
+method = "q_delta = inverse(q_prev) * q_curr"
+angle_extraction = "angle_of_rotation(q_delta)"
+
+[constraints]
+normalize_after_multiplication = true
+drift_threshold = 1e-6
+
+[validation]
+baseline_model_required = true
+compare_against = "non_quaternion_linear_state_model"
+invariant = "quaternion_results_must_be_compared_to_baseline"

@@ -1,0 +1,11 @@
+[data]
+required_series = ["gdp_growth", "inflation", "unemployment", "interest_rate", "fiscal_balance", "current_account", "housing_price_index", "consumer_confidence", "investment_flow", "exchange_rate"]
+geopolitical_series = ["geopolitical_tension_index", "sanctions_exposure", "alliance_stability"]
+frequency = "quarterly"
+preprocessing = ["normalization", "outlier_marking", "missing_value_handling"]
+source_attribution = true
+
+[preprocess]
+normalization = "explicit_method"
+outlier_handling = "mark_not_remove"
+missing_value = "explicit_method"

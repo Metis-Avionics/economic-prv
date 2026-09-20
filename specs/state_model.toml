@@ -1,0 +1,16 @@
+[state]
+dimensions = 8
+type = "SVector<f64, 8>"
+fields = ["capacity", "investment", "labour_absorption", "fiscal_capacity", "demand_pressure", "housing_pressure", "geopolitical_load", "migration_pressure"]
+description = "8-dimensional latent economic state vector"
+
+[observation]
+dimensions = "dataset_dependent"
+type = "SVector<f64, D>"
+required_series = ["gdp_growth", "inflation", "unemployment", "interest_rate", "fiscal_balance", "current_account", "housing_price_index", "consumer_confidence", "investment_flow", "exchange_rate"]
+note = "Observation dimension is dataset-dependent; use ObservationModel trait"
+
+[regime]
+type = "enum"
+values = ["Expansion", "Saturation", "Contraction", "Recovery", "StructuralShock"]
+classification = "from_pressure: sum of pressure indicators relative to capacity"

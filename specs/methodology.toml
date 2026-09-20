@@ -1,0 +1,12 @@
+[project]
+name = "prv"
+description = "Research-grade economic simulation with EKF state estimation, Monte Carlo, and Spec-and-Go methodology"
+methodology = "Spec-and-Go"
+turn_protocol = "load_spec -> inspect_handover -> execute -> validate -> living_update"
+
+[turn]
+load = ["spec.toml", "specs/*.toml", "docs/session.md", "docs/handover.md"]
+execute_boundary = "within_spec"
+validate = "mandatory"
+living_update = "prv-cli living update"
+handover = "prv-cli session handover"

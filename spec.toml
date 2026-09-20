@@ -1,0 +1,51 @@
+[project]
+name = "prv"
+version = "0.1.0"
+edition = "2024"
+rust_version = "1.98"
+license = "MIT"
+description = "Research-grade economic simulation with EKF, Monte Carlo, and Spec-and-Go methodology"
+
+[dependencies.theSix]
+required = true
+role = "data-access-and-cache-abstraction"
+crate_name = "thesix"
+version = "0.2.3"
+source = "crates-io"
+features = ["redis", "sled"]
+resolution_must_be_verified = true
+
+[dependencies.theMQL]
+required = true
+role = "message-query-and-dispatch"
+crate_name = "themql-runtime"
+version = "0.1.0"
+source = "crates-io"
+features = ["desktop"]
+companion_crates = ["themql-core"]
+resolution_must_be_verified = true
+
+[workspace]
+members = [
+    "crates/core",
+    "crates/filter",
+    "crates/monte_carlo",
+    "crates/policy",
+    "crates/geometry",
+    "crates/data",
+    "crates/evaluation",
+    "crates/cli",
+]
+
+[numerical_stack]
+nalgebra = "0.35"
+ndarray = "0.17"
+rand = "0.9"
+rand_distr = "0.9"
+statrs = "0.17"
+
+[quality]
+formatting = "cargo_fmt"
+linting = "clippy_pedantic_nursery"
+forbid_unsafe = true
+tests_required = true

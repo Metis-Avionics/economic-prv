@@ -1,0 +1,18 @@
+[package]
+name = "prv-monte-carlo"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+prv-core = { path = "../core", version = "0.1.0" }
+prv-filter = { path = "../filter", version = "0.1.0" }
+nalgebra.workspace = true
+ndarray.workspace = true
+rand.workspace = true
+rand_distr.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true

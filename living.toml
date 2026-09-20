@@ -1,0 +1,68 @@
+[handover]
+status = "scaffolded"
+phase = "implementation"
+last_updated = "2026-09-20T18:38:20+01:00"
+summary = "Rust workspace scaffolded with 8 crates. All quality gates pass: cargo check, clippy -D warnings, cargo test, cargo fmt."
+remaining = [
+    "Add unit tests for core/filter/monte_carlo",
+    "Implement full prv-cli living update doc generation",
+    "Implement EKF validation tests",
+    "Implement Monte Carlo reproducibility test",
+    "Implement evaluation metrics tests",
+    "Implement research integrity invariant tests",
+]
+decisions = [
+    { id = "D1", description = "Use virtual workspace with resolver 2", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "D2", description = "8-dimensional state vector with nalgebra SVector", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "D3", description = "Finite-difference Jacobians via central differences", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "D4", description = "Quaternion model is experimental with baseline comparison invariant", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "D5", description = "living.toml at root as structured state, Markdown projections in docs/", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "D6", description = "ObservationModel trait generic over const D for dataset-dependent dimensions", timestamp = "2026-09-20T18:38:20+01:00" },
+]
+completed = [
+    { id = "C1", description = "Verified Rust 1.98.1 with edition 2024 support", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C2", description = "Verified thesix 0.2.3 on crates.io", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C3", description = "Verified themql-runtime 0.1.0 + themql-core on crates.io", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C4", description = "Created workspace directory structure", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C5", description = "Written all spec TOML files", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C6", description = "Converted Cargo.toml to virtual workspace with verified dependency versions", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C7", description = "Implemented prv-core: State, Observation<D>, Regime, PressureReleaseValve, TimeSeries", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C8", description = "Implemented prv-filter: Ekf<M,O,D>, TransitionModel, ObservationModel traits", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C9", description = "Implemented prv-monte-carlo: ShockSpec, Simulator with Cholesky sampling", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C10", description = "Implemented prv-policy: PolicyEngine, PolicyDistribution, regime_response", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C11", description = "Implemented prv-geometry: QuaternionState, baseline_compare", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C12", description = "Implemented prv-data: DataFrame, DataLoader", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C13", description = "Implemented prv-evaluation: Model trait, Evaluator, MetricResults", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C14", description = "Implemented prv-cli: clap Commands, spec/living/session/status stubs", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C15", description = "Updated AGENTS.md with PRV Spec-and-Go context", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C16", description = "cargo check --workspace passes with zero warnings", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C17", description = "cargo clippy --workspace -- -D warnings passes", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C18", description = "cargo test --workspace passes", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "C19", description = "cargo fmt --check passes", timestamp = "2026-09-20T18:38:20+01:00" },
+]
+changed = []
+validated = [
+    { id = "V1", description = "Rust toolchain 1.98.1 confirmed", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "V2", description = "Dependencies verified on crates.io", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "V3", description = "Workspace compiles with zero warnings", timestamp = "2026-09-20T18:38:20+01:00" },
+    { id = "V4", description = "Clippy pedantic + nursery passes with -D warnings", timestamp = "2026-09-20T18:38:20+01:00" },
+]
+known_failures = []
+next_action = "Add unit tests and complete prv-cli living update implementation"
+open_questions = []
+
+[changelog]
+entries = [
+    { type = "spec_created", description = "Initial spec.toml with verified dependencies", timestamp = "2026-09-20T18:38:20+01:00" },
+    { type = "dependency_resolved", description = "theSix -> thesix 0.2.3 (crates.io)", timestamp = "2026-09-20T18:38:20+01:00" },
+    { type = "dependency_resolved", description = "theMQL -> themql-runtime 0.1.0 + themql-core (crates.io)", timestamp = "2026-09-20T18:38:20+01:00" },
+    { type = "workspace_scaffolded", description = "8 crates scaffolded with lib.rs and Cargo.toml", timestamp = "2026-09-20T18:38:20+01:00" },
+    { type = "core_implemented", description = "prv-core: State, Observation<D>, Regime, PRV, TimeSeries, PrvError", timestamp = "2026-09-20T18:38:20+01:00" },
+    { type = "filter_implemented", description = "prv-filter: EKF with finite-difference Jacobians", timestamp = "2026-09-20T18:38:20+01:00" },
+    { type = "monte_carlo_implemented", description = "prv-monte-carlo: ShockSpec, Simulator with Cholesky sampling", timestamp = "2026-09-20T18:38:20+01:00" },
+    { type = "policy_implemented", description = "prv-policy: PolicyEngine, PolicyDistribution, regime_response", timestamp = "2026-09-20T18:38:20+01:00" },
+    { type = "geometry_implemented", description = "prv-geometry: QuaternionState with baseline_compare", timestamp = "2026-09-20T18:38:20+01:00" },
+    { type = "data_implemented", description = "prv-data: DataFrame, DataLoader", timestamp = "2026-09-20T18:38:20+01:00" },
+    { type = "evaluation_implemented", description = "prv-evaluation: Model trait, Evaluator, metrics", timestamp = "2026-09-20T18:38:20+01:00" },
+    { type = "cli_implemented", description = "prv-cli: clap Commands with spec/living/session/status", timestamp = "2026-09-20T18:38:20+01:00" },
+]

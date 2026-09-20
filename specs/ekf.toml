@@ -1,0 +1,27 @@
+[ekf]
+state_dim = 8
+observation_dim = "dynamic"
+numerical_jacobian = true
+jacobian_step = 1e-6
+jacobian_method = "central_differences"
+covariance_stabilization = "eigenvalue_clamping"
+eigenvalue_floor = 1e-10
+quaternion_normalization = true
+
+[transition]
+model = "nonlinear"
+control_input = "optional"
+predict_step = "x_hat = f(x_hat, u); P = F * P * F^T + Q"
+
+[update]
+kalman_gain = "K = P * H^T * (H * P * H^T + R)^-1"
+innovation = "z - h(x_hat)"
+state_update = "x_hat = x_hat + K * innovation"
+covariance_update = "P = (I - K * H) * P"
+
+[validation.required]
+innovation_statistics = true
+covariance_symmetry = true
+finite_state = true
+finite_covariance = true
+covariance_psd = true
