@@ -17,3 +17,6 @@ rand_distr.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
+
+[lints]
+workspace = true

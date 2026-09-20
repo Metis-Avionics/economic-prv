@@ -59,3 +59,15 @@ This project uses the Spec-and-Go methodology. Each agent turn:
 5. Records handover for the next agent
 
 The TOML spec is the memory; Markdown is a generated projection.
+
+## Quality Gates
+
+All quality gates must pass before a PR is merged:
+
+1. `cargo fmt --all -- --check` — formatting
+2. `cargo clippy --workspace --all-targets` — linting (workspace `all = "deny"`)
+3. `cargo test --workspace` — tests pass
+4. `python3 scripts/tetanus-check.py` — TETANUS power-of-ten checker (0 errors)
+5. `bash scripts/check_schema.sh` — HelixDB schema labels/edges present
+6. `cargo deny check` — supply-chain gate (advisories, licenses, bans)
+7. `cargo machete --skip-target-dir` — unused dependency gate

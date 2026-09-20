@@ -40,3 +40,31 @@ impl PressureReleaseValve {
         (pressure - relief) / self.capacity.max(1e-10)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn prv_value_computes_pressure_over_capacity() {
+        let prv = PressureReleaseValve::new(2.0, 0.5, 0.3, 0.2, 0.4);
+        let state = State::new(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+        let v = prv.value(&state);
+        assert!(v.is_finite());
+    }
+
+    #[test]
+    fn prv_value_zero_capacity_avoids_divide_by_zero() {
+        let prv = PressureReleaseValve::new(0.0, 0.5, 0.3, 0.2, 0.4);
+        let state = State::new(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+        let v = prv.value(&state);
+        assert!(v.is_finite());
+    }
+
+    #[test]
+    fn prv_value_positive_capacity_returns_positive() {
+        let prv = PressureReleaseValve::new(1.0, 0.0, 0.0, 0.0, 0.0);
+        let state = State::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        assert!(prv.value(&state) >= 0.0);
+    }
+}

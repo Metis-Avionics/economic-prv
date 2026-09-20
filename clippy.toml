@@ -1,0 +1,16 @@
+# clippy.toml — thresholds for the TETANUS (Power of 10) enforcement.
+# See tetanus.toml for the rule-by-rule binding. Keep [thresholds] in sync.
+#
+# Rule 4: function length bound (Holzmann: ~60 lines, one line per
+# statement/declaration). Pedantic `too_many_lines` is on the warn track
+# (tetanus.toml power10-04); the hard gate lives in scripts/tetanus-check.py.
+too-many-lines-threshold = 60
+# Rule 1: simple control flow proxy (warn track; recursion itself is banned
+# by the checker, tetanus.toml power10-01).
+cognitive-complexity-threshold = 25
+
+# Rule 7: tests may unwrap/expect/panic; strict LIB code may not (extra
+# `#![deny]` headers in strict crates + checker string scan).
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true

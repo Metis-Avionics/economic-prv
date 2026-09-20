@@ -6,6 +6,8 @@ pub enum DataError {
     IoError(String),
     #[error("Parse error: {0}")]
     ParseError(String),
+    #[error("Serialization error: {0}")]
+    SerializationError(String),
 }
 
 pub type DataResult<T> = Result<T, DataError>;

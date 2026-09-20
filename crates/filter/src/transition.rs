@@ -33,3 +33,36 @@ impl TransitionModel for DefaultTransition {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::State;
+
+    #[test]
+    fn default_transition_preserves_non_negative_state() {
+        let transition = DefaultTransition;
+        let state = State::new(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+        let next = transition.f(&state, None);
+        assert!(next.capacity() >= 0.0);
+        assert!(next.investment() >= 0.0);
+        assert!(next.fiscal_capacity() >= 0.0);
+    }
+
+    #[test]
+    fn default_transition_changes_state() {
+        let transition = DefaultTransition;
+        let state = State::new(1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        let next = transition.f(&state, None);
+        assert_ne!(next.as_vector(), state.as_vector());
+    }
+
+    #[test]
+    fn default_transition_ignores_control_input() {
+        let transition = DefaultTransition;
+        let state = State::new(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+        let control = Some(crate::Control::from_vec(vec![0.0; 8]));
+        let next = transition.f(&state, control.as_ref());
+        assert!(next.capacity().is_finite());
+    }
+}

@@ -1,0 +1,164 @@
+# ============================================================================
+# tetanus.toml — "The Power of 10" as automatically enforced rules.
+#
+# Source: Gerard J. Holzmann, "The Power of 10: Rules for Developing
+# Safety-Critical Code" (IEEE Computer, June 2006). The original targets C;
+# this file adapts each rule to Rust and binds it to TWO enforcement
+# mechanisms, both of which fail CI on violation:
+#
+#   1. Clippy lints-as-errors: [workspace.lints] in the root Cargo.toml
+#      (inherited by every member via `[lints] workspace = true`) plus
+#      per-crate `#![deny(...)]` headers for the safety-critical profile.
+#      Thresholds live in clippy.toml. Run:
+#        cargo clippy --workspace --all-targets   (tier 1: denies are errors)
+#   2. scripts/tetanus-check.py: a static checker for the rules Clippy
+#      cannot prove (recursion, loop bounds, hot-path heap use, function
+#      length, assertion density, macro/cfg discipline, pointer discipline).
+#      Run:
+#        python3 scripts/tetanus-check.py
+#
+# Enforcement is default-deny with explicit justification: a violation may
+# only be waived with a `// TETANUS-exempt(<rule-id>): <reason>` comment at
+# the site (the same philosophy as Holzmann's Rule 8: each flagged use must
+# be justified in the code). The checker reports exemptions as warnings so
+# they stay visible instead of rotting.
+# ============================================================================
+
+[tetanus]
+version = "1.0.0"
+source = "Holzmann, The Power of 10 (IEEE Computer, June 2006)"
+checker = "scripts/tetanus-check.py"
+
+# --------------------------------------------------------------------------
+# Scope profiles. Safety-critical crates get the strict (deny) profile;
+# everything else gets the advisory (warn) profile for the same rules.
+# A crate is safety-critical when its spec sets `safety_critical = true`
+# (specs/gnc.toml, specs/estimation.toml) or it owns deterministic
+# numerics on the control path (ns-solver, ns-lqri).
+# --------------------------------------------------------------------------
+[scope]
+strict = ["crates/core", "crates/filter", "crates/monte_carlo", "crates/policy", "crates/geometry"]
+advisory = ["crates/data", "crates/evaluation", "crates/cli", "crates/cache"]
+
+# --------------------------------------------------------------------------
+# Tunables shared by clippy.toml and the checker. Keep the two in sync.
+# --------------------------------------------------------------------------
+[thresholds]
+max_fn_lines = 60            # Rule 4: code lines per function (blank/comment excluded)
+min_asserts_per_fn_avg = 1   # Rule 5: target average; hard gate is >=1 per fallible fn
+max_non_test_cfgs = 2        # Rule 8: non-test #[cfg] per strict crate needs justification
+cognitive_complexity = 25    # Rule 1: clippy.toml cognitive-complexity-threshold
+
+# Rule 3 hot path: functions that must not heap-allocate. These run on the
+# real-time step path. Constructors (*new*, *with_**, zeros, Default),
+# export/analysis helpers (sim, handoff, export, metrics reports), and cold
+# error paths (lines mentioning Err/Error/reason) may allocate.
+[rule3]
+hot_fns = ["predict", "update", "jacobian_f", "jacobian_h", "stabilize_covariance", "quaternion_normalize"]
+cold_markers = ["Err", "Error", "reason", "assert"]
+
+# --------------------------------------------------------------------------
+# The ten rules. `clippy` lists the lints bound to the rule ("deny" =
+# workspace error, "warn" = migration track, "strict-deny" = extra
+# `#![deny]` in strict lib.rs headers). `checker` names the static check.
+# --------------------------------------------------------------------------
+
+[[rule]]
+id = "power10-01"
+title = "Restrict to simple control flow — no recursion"
+c_rule = "No goto, setjmp/longjmp, direct or indirect recursion."
+rust_adaptation = "Rust has no goto/setjmp. Ban direct and indirect recursion (call-graph check) so the call graph stays acyclic and stack use is statically bounded. Keep cognitive complexity low."
+clippy = ["cognitive_complexity(warn)"]
+checker = "call-graph cycle detection over strict lib code (error)"
+level = { strict = "deny", advisory = "warn" }
+
+[[rule]]
+id = "power10-02"
+title = "Give all loops a fixed upper bound"
+c_rule = "A checking tool must be able to prove a static trip-count bound, else the rule is violated."
+rust_adaptation = "Prefer `for` over bounded iterators/ranges. `while`/`loop` in strict code must carry a `// TETANUS-bound:` or `// TETANUS-nonterminating:` justification (the scheduler exception from the paper). Clippy bans the unbounded-iterator shapes."
+clippy = ["never_loop(deny)", "while_immutable_condition(deny)", "infinite_iter(deny)", "maybe_infinite_iter(deny)", "empty_loop(deny)"]
+checker = "flag while/loop without TETANUS marker (error)"
+level = { strict = "deny", advisory = "warn" }
+
+[[rule]]
+id = "power10-03"
+title = "No dynamic memory allocation after initialization"
+c_rule = "No malloc/free after init; live within a fixed preallocated area."
+rust_adaptation = "No heap allocation on the real-time step path ([rule3.hot_fns]); buffers are preallocated in constructors (cf. Solver scratch buffers). Error paths, constructors, and export/analysis helpers may allocate. Smart pointers (Box/Rc/Arc) are banned in strict lib code."
+clippy = []
+checker = "heap-pattern scan in hot fns + smart-pointer ban (error)"
+level = { strict = "deny", advisory = "warn" }
+
+[[rule]]
+id = "power10-04"
+title = "No function longer than ~60 lines"
+c_rule = "One sheet of paper, one line per statement/declaration: ~60 lines."
+rust_adaptation = "clippy::too_many_lines with too-many-lines-threshold = 60, plus the checker's statement-style counter. Exemptions require TETANUS-exempt and a follow-up task."
+clippy = ["too_many_lines(warn, threshold=60)"]
+checker = "function code-line count (error in strict, warn elsewhere)"
+level = { strict = "deny", advisory = "warn" }
+exemptions = []
+
+[[rule]]
+id = "power10-05"
+title = "Assertion density: minimally two assertions per function (average)"
+c_rule = "Side-effect-free Boolean assertions with explicit recovery; statically-trivial assertions violate the rule."
+rust_adaptation = "Rust counting: assert!/debug_assert!/assert_eq! et al, `return Err`/`return None` guards, `?` propagation, and finiteness checks. Hard gate: every fallible (Result/Option-returning) fn has >= 1 check. Target: file average >= 2 (warn until met)."
+clippy = ["missing_asserts_for_indexing(deny)", "missing_errors_doc(warn)", "missing_panics_doc(warn)"]
+checker = "fallible-fn check gate (error) + density metric (warn)"
+level = { strict = "deny", advisory = "warn" }
+
+[[rule]]
+id = "power10-06"
+title = "Declare all data objects at the smallest possible scope"
+c_rule = "Data hiding: fewer statements can assign, easier fault diagnosis, no variable reuse for incompatible purposes."
+rust_adaptation = "Block-local `let`, no `static mut`, minimal `pub` surface. Clippy shadow lints stay on the warn track."
+clippy = ["shadow_same(warn)", "shadow_reuse(warn)"]
+checker = "static-mut ban (error), pub-static notice (warn)"
+level = { strict = "deny", advisory = "warn" }
+
+[[rule]]
+id = "power10-07"
+title = "Check every return value; validate every parameter"
+c_rule = "Callers check non-void returns (explicit (void) cast + comment to ignore); callees validate all parameters."
+rust_adaptation = "No unwrap/expect/panic/todo/unimplemented/unreachable in strict lib code (tests exempt via clippy.toml allow-*-in-tests). #[must_use] on pure fns (migration track). Parameters validated with finiteness/range guards returning typed errors. Rust `unused_must_use` is deny workspace-wide."
+clippy = ["unwrap_used(strict-deny)", "expect_used(strict-deny)", "panic(deny)", "todo(deny)", "unimplemented(deny)", "unreachable(deny)", "must_use_candidate(warn)", "let_underscore_must_use(warn)"]
+checker = "unwrap/expect/panic/todo/unimplemented/unreachable string scan in strict lib (error)"
+level = { strict = "deny", advisory = "warn" }
+
+[[rule]]
+id = "power10-08"
+title = "Restrict the preprocessor: includes + simple macros only"
+c_rule = "No token pasting, varargs, recursive macros; macros expand to complete syntactic units; minimal conditional compilation, each use justified."
+rust_adaptation = "No macro_rules! in strict lib code; no more than [thresholds.max_non_test_cfgs] non-test #[cfg] per strict crate, each with a TETANUS-cfg justification. Keep imports explicit (no wildcard imports); no print/dbg macros in strict lib code."
+clippy = ["wildcard_imports(deny)", "print_stdout(strict-deny)", "print_stderr(strict-deny)", "dbg_macro(strict-deny)", "use_debug(strict-deny)"]
+checker = "macro_rules ban (error), non-test cfg count/justification (error)"
+level = { strict = "deny", advisory = "warn" }
+
+[[rule]]
+id = "power10-09"
+title = "Restrict pointers: single dereference level, no function pointers"
+c_rule = "No hidden dereference in macros/typedefs; function pointers only with strong justification."
+rust_adaptation = "Safe Rust already bans dereference outside `unsafe`. `#![deny(unsafe_code)]` workspace-wide (via [workspace.lints.rust]) plus a checker ban on raw-pointer syntax (*const/*mut, `as *`, fn-pointer args, ** double-deref) in strict lib code."
+clippy = []
+checker = "raw-pointer syntax scan (error); unsafe_code deny (rustc)"
+level = { strict = "deny", advisory = "warn" }
+
+[[rule]]
+id = "power10-10"
+title = "Zero warnings at the most pedantic setting, checked daily"
+c_rule = "Compile from day one with all warnings at the most pedantic setting; zero warnings; daily run of at least one strong static analyzer."
+rust_adaptation = "Two-tier gate. Tier 1 (enforced, fails CI): [workspace.lints.clippy] all=deny plus the per-rule denies above, and this checker as the second analyzer. Tier 2 (migration track, currently warn): pedantic/nursery groups, must_use/missing-docs, too_many_lines, unused_results — `cargo clippy -- -D warnings -W clippy::pedantic -W clippy::nursery` must eventually be clean; each new warn-level finding needs a justification or a fix."
+clippy = ["all(deny)", "pedantic(warn)", "nursery(warn)"]
+checker = "plumbing gate: every member inherits [lints] workspace=true, clippy.toml present, strict deny-headers present (error)"
+level = { strict = "deny", advisory = "deny" }
+
+# --------------------------------------------------------------------------
+# CI composition. Tier 1 must pass; tier 2 is the tracked escalation.
+# --------------------------------------------------------------------------
+[ci]
+check = "python3 scripts/tetanus-check.py"
+lint = "cargo clippy --workspace --all-targets"
+lint_escalation = "cargo clippy --workspace --all-targets -- -D warnings -W clippy::pedantic -W clippy::nursery"
+test = "cargo test --workspace"

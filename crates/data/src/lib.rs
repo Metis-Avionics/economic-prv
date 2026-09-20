@@ -1,9 +1,10 @@
 #![forbid(unsafe_code)]
-#![warn(clippy::pedantic, clippy::nursery)]
 
+pub mod cache;
 pub mod error;
 pub mod loader;
 
+pub use cache::DataCache;
 pub use error::DataError;
 pub use loader::{DataFrame, DataLoader};
 

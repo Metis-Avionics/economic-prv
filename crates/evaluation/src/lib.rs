@@ -1,5 +1,4 @@
 #![forbid(unsafe_code)]
-#![warn(clippy::pedantic, clippy::nursery)]
 
 pub mod backtest;
 pub mod metrics;
