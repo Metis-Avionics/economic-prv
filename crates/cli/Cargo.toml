@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
+description = "Command-line interface for the prv Spec-and-Go workflow"
 
 [[bin]]
 name = "prv-cli"
