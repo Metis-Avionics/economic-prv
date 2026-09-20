@@ -174,10 +174,14 @@ impl DataLoader {
     /// # Errors
     ///
     /// Returns `DataError` if conversion fails.
+    ///
+    /// # Panics
+    ///
+    /// Panics if a row cannot be converted to a 10-element array.
     pub fn to_observations(
         &self,
         data: &DataFrame,
-    ) -> Result<Vec<prv_core::Observation>, DataError> {
+    ) -> Result<Vec<prv_core::Observation<10>>, DataError> {
         if data.columns.len() < 10 {
             return Err(DataError::ParseError(format!(
                 "DataFrame has {} columns, expected at least 10",
@@ -225,8 +229,10 @@ impl DataLoader {
                     "Row has fewer than 10 elements".to_string(),
                 ));
             }
-            let values_vec = row[..10].to_vec();
-            observations.push(prv_core::Observation::new(values_vec));
+            let values_array: [f64; 10] = row[..10]
+                .try_into()
+                .expect("row must have at least 10 elements");
+            observations.push(prv_core::Observation::new(values_array));
         }
 
         Ok(observations)

@@ -24,9 +24,27 @@ cargo install --path crates/cli
 ## Usage
 
 ```bash
+# Validate specs against codebase
 prv-cli spec validate
+
+# Update living docs from spec.toml + specs/*.toml
 prv-cli living update
+
+# Generate session handover notes
+prv-cli session handover
+
+# Show workspace status
+prv-cli status
 ```
+
+## Pipeline Demo
+
+```bash
+# Run the full economic simulation pipeline with faux data
+cargo run --example run_pipeline -p prv-cli
+```
+
+This wires `DataLoader` → `Ekf` → `Simulator` → `PolicyEngine` → `Evaluator` end-to-end using `examples/faux_data.csv`.
 
 ## Dependencies
 
