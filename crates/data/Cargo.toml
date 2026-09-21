@@ -8,8 +8,8 @@ authors.workspace = true
 description = "CSV/JSON data loading and DataFrame abstractions for the prv workspace"
 
 [dependencies]
-prv-core = { path = "../core", version = "0.1.0" }
-prv-cache = { path = "../cache", version = "0.1.0" }
+prv-core = { path = "../core", version = "0.2.0" }
+prv-cache = { path = "../cache", version = "0.2.0" }
 csv.workspace = true
 serde.workspace = true
 serde_json.workspace = true

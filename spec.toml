@@ -1,6 +1,6 @@
 [project]
 name = "prv"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 rust_version = "1.98"
 license = "MIT"
@@ -19,7 +19,7 @@ resolution_must_be_verified = true
 required = true
 role = "message-query-and-dispatch"
 crate_name = "themql-runtime"
-version = "0.1.0"
+version = "0.2.0"
 source = "crates-io"
 features = ["desktop"]
 companion_crates = ["themql-core"]

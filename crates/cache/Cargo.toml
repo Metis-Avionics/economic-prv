@@ -1,6 +1,6 @@
 [package]
 name = "prv-cache"
-version = "0.1.0"
+version.workspace = true
 edition.workspace = true
 license.workspace = true
 description = "PRV six-tier cache wiring over thesix with DashMap read-heavy stats/index"

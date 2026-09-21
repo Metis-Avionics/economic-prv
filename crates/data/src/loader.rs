@@ -72,12 +72,16 @@ impl DataLoader {
             .map(std::string::ToString::to_string)
             .collect::<Vec<_>>();
 
+        let quarter_idx = headers.iter().position(|h| h == "quarter");
+
         let mut data = Vec::new();
         for result in reader.records() {
             let record = result.map_err(|e| DataError::IoError(e.to_string()))?;
             let row: Vec<f64> = record
                 .iter()
-                .map(|s| {
+                .enumerate()
+                .filter(|(i, _)| quarter_idx != Some(*i))
+                .map(|(_, s)| {
                     s.parse::<f64>()
                         .map_err(|e| DataError::ParseError(e.to_string()))
                 })

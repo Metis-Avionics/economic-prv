@@ -8,12 +8,12 @@ authors.workspace = true
 description = "Backtesting, metrics, and model evaluation for the prv workspace"
 
 [dependencies]
-prv-core = { path = "../core", version = "0.1.0" }
-prv-filter = { path = "../filter", version = "0.1.0" }
-prv-monte-carlo = { path = "../monte_carlo", version = "0.1.0" }
-prv-policy = { path = "../policy", version = "0.1.0" }
-prv-data = { path = "../data", version = "0.1.0" }
-prv-geometry = { path = "../geometry", version = "0.1.0" }
+prv-core = { path = "../core", version = "0.2.0" }
+prv-filter = { path = "../filter", version = "0.2.0" }
+prv-monte-carlo = { path = "../monte_carlo", version = "0.2.0" }
+prv-policy = { path = "../policy", version = "0.2.0" }
+prv-data = { path = "../data", version = "0.2.0" }
+prv-geometry = { path = "../geometry", version = "0.2.0" }
 nalgebra.workspace = true
 ndarray.workspace = true
 serde.workspace = true
