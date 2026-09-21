@@ -8,7 +8,7 @@ Research-grade economic simulation with EKF, Monte Carlo, and Spec-and-Go method
 
 ## Architecture
 
-- `crates/cache` - cache
+- `crates/cache` - prv-cache
 - `crates/cli` - prv-cli
 - `crates/core` - prv-core
 - `crates/data` - prv-data

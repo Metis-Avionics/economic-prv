@@ -1,0 +1,39 @@
+[cache]
+crate = "prv-cache"
+type = "six_tier_facade"
+description = "Policy-routed cache façade over thesix with read-heavy DashMap stats and key indexing"
+
+[tiers]
+count = 6
+range = "L0..L5"
+default_backends = "in-memory stubs"
+alternative_backends = ["redis", "sled"]
+
+[stats]
+backend = "dashmap::DashMap"
+key_pattern = "<op>:<namespace>"
+snapshot_type = "BTreeMap<String, u64>"
+
+[index]
+backend = "dashmap::DashMap"
+purpose = "key -> namespace subject mapping for pattern-scoped lookups"
+
+[keys]
+namespaces = [
+    "simulation:results:<case_id>",
+    "ekf:state:<timestamp>",
+    "data:historical:<source>",
+    "policy:decision:<regime>"
+]
+
+[operations]
+async = ["get", "get_or_fetch", "set", "invalidate", "remove", "exists", "refresh"]
+batch = ["warm_many", "invalidate_many"]
+sync = ["stats_snapshot", "keys_for_subject"]
+
+[dependencies]
+thesix = "0.2.3"
+dashmap = "6"
+tokio = "1"
+serde = "1"
+tracing = "0.1"

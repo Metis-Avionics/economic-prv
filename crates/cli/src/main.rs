@@ -174,6 +174,7 @@ fn validate_spec(cache: &CliCache) {
     }
 
     let expected_specs = vec![
+        "cache.toml",
         "cli.toml",
         "data.toml",
         "dependencies.toml",
