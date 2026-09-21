@@ -62,3 +62,17 @@ jobs:
 
       - name: cargo machete — unused dependency gate
         run: cargo machete --skip-target-dir
+
+      - name: Verify workspace crates on crates.io
+        if: github.ref_type == 'tag'
+        run: |
+          VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/.*= *"//;s/".*//')
+          echo "Verifying crates.io availability for version $VERSION"
+          for crate in prv-core prv-cache prv-filter prv-geometry prv-monte-carlo prv-policy prv-data prv-evaluation prv-cli; do
+            echo "Checking $crate $VERSION..."
+            cargo search "$crate" --limit 1 | grep -q "$crate = \"$VERSION\"" || {
+              echo "::error::$crate $VERSION not found on crates.io"
+              exit 1
+            }
+          done
+          echo "All 9 workspace crates verified on crates.io at version $VERSION"

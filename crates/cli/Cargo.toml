@@ -35,6 +35,7 @@ thesix.workspace = true
 rand.workspace = true
 rand_distr.workspace = true
 chrono.workspace = true
+docx_basic.workspace = true
 
 [lints]
 workspace = true

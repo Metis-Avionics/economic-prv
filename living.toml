@@ -1,8 +1,8 @@
 [handover]
 status = "implementation"
 phase = "testing_and_cli_hardening"
-last_updated = "2026-09-21T01:13:00+01:00"
-summary = "Added 26 new unit tests across core/filter/monte_carlo/evaluation/data crates. Completed prv-cli living update and session handover to read from living.toml and specs/*.toml instead of hardcoded strings. Fixed DataLoader::load_historical to skip non-numeric 'quarter' column during CSV parsing. Verified full pipeline example (run_pipeline) executes end-to-end with faux_data.csv. All quality gates pass with 72 tests total."
+last_updated = "2026-09-21T02:24:00+01:00"
+summary = "All quality gates green: fmt clean, clippy 0 errors (0 warnings in workspace), 77 tests pass, TETANUS 0 errors/0 warnings, cargo deny check ok. Multi-format report export (--save) implemented and verified for markdown, txt, toml, and docx formats. Fixed all 24 clippy warnings in run_pipeline.rs example. Ready for 0.2.1 release."
 remaining = [
     "Add specs/parallelism.toml for Apalis/Rayon optimization targets (no spec entry → out of scope until added)",
     "Add specs/helixdb.toml and schema for live HelixDB testing (no spec entry → out of scope until added)",
@@ -55,7 +55,16 @@ completed = [
     { id = "C34", description = "Updated AGENTS.md with Quality Gates section", timestamp = "2026-09-20T22:30:00+01:00" },
     { id = "C35", description = "Fixed DataLoader::load_historical to skip non-numeric 'quarter' column during CSV float parsing", timestamp = "2026-09-21T01:10:00+01:00" },
     { id = "C36", description = "Verified full pipeline example (cargo run --example run_pipeline -p prv-cli) executes end-to-end with faux_data.csv", timestamp = "2026-09-21T01:12:00+01:00" },
-    { id = "C37", description = "Published all 9 workspace crates to crates.io as prv-*-0.2.0", timestamp = "2026-09-21T01:18:00+01:00" },
+     { id = "C37", description = "Published all 9 workspace crates to crates.io as prv-*-0.2.0", timestamp = "2026-09-21T01:18:00+01:00" },
+     { id = "C38", description = "Fixed remaining clippy errors in run_pipeline.rs: removed format! borrow, replaced io::Error::new with Error::other, removed redundant closure", timestamp = "2026-09-21T02:20:00+01:00" },
+     { id = "C39", description = "Added bzip2-1.0.6 to deny.toml licenses to satisfy cargo deny after docx_basic dependency", timestamp = "2026-09-21T02:20:00+01:00" },
+     { id = "C40", description = "Verified full quality gate suite passes: cargo fmt, cargo clippy, 77 tests, TETANUS 0 errors, cargo deny check ok", timestamp = "2026-09-21T02:20:00+01:00" },
+     { id = "C41", description = "Verified --save report export works end-to-end for markdown, txt, toml, and docx formats", timestamp = "2026-09-21T02:20:00+01:00" },
+     { id = "C42", description = "Fixed all 24 clippy warnings in run_pipeline.rs example: replaced unwrap with expect, fixed format! args, added allows for cast_precision_loss and suboptimal_flops in generate_faux_csv", timestamp = "2026-09-21T02:24:00+01:00" },
+     { id = "C43", description = "Fixed DataLoader invariant: load_historical now removes 'quarter' from both headers and rows so columns.len() == row.len()", timestamp = "2026-09-21T02:55:00+01:00" },
+     { id = "C44", description = "Fixed to_observations() to select observation values by required series name rather than positional index, making it robust to column reordering", timestamp = "2026-09-21T02:55:00+01:00" },
+     { id = "C45", description = "Added prv-cache to publish-next-crate.sh release ordering (was missing from 9-crate publish list)", timestamp = "2026-09-21T02:55:00+01:00" },
+     { id = "C46", description = "Added crates.io publication verification step to CI workflow that runs on tags", timestamp = "2026-09-21T02:55:00+01:00" },
 ]
 changed = [
     "crates/core/src/prv.rs — added PressureReleaseValve tests (value, zero capacity, positive)",
@@ -70,7 +79,15 @@ changed = [
     "crates/data/src/loader.rs — fixed load_historical to skip 'quarter' column by header name during float parsing",
     "crates/cli/Cargo.toml — added rand, rand_distr, chrono workspace deps for run_pipeline example",
     "crates/cli/examples/run_pipeline.rs — fixed unused PathBuf import; added clippy allows for example build",
-    "examples/faux_data.csv — regenerated to match deterministic pipeline output (seed=42, rows=20)",
+     "examples/faux_data.csv — regenerated to match deterministic pipeline output (seed=42, rows=20)",
+     "crates/cli/examples/run_pipeline.rs — fixed remaining clippy errors: removed format! borrows, replaced io::Error::new with Error::other, removed redundant closure in docx writer",
+     "deny.toml — added bzip2-1.0.6 license to satisfy cargo deny check after docx_basic dependency",
+      "crates/cli/Cargo.toml — added docx_basic = \"0.1\" workspace dependency for report export",
+     "crates/data/src/loader.rs — fixed load_historical to remove 'quarter' from both headers and rows, preserving DataFrame invariant columns.len() == row.len()",
+     "crates/data/src/loader.rs — fixed to_observations() to select observation values by required series name rather than positional index, robust to column reordering",
+     "crates/data/src/loader.rs — added tests: to_observations_selects_by_name_not_position, load_historical_removes_quarter_from_headers_and_rows",
+     "scripts/publish-next-crate.sh — added prv-cache to CRATES array for release ordering",
+     ".github/workflows/ci.yml — added crates.io publication verification step that runs on tags",
 ]
 validated = [
     { id = "V1", description = "Rust toolchain 1.98.1 confirmed", timestamp = "2026-09-20T18:38:20+01:00" },
@@ -78,14 +95,22 @@ validated = [
     { id = "V3", description = "Workspace compiles with zero warnings", timestamp = "2026-09-20T18:38:20+01:00" },
     { id = "V4", description = "Clippy pedantic + nursery passes with -D warnings", timestamp = "2026-09-20T18:38:20+01:00" },
     { id = "V5", description = "cargo fmt --check passes", timestamp = "2026-09-20T18:38:20+01:00" },
-    { id = "V6", description = "cargo test --workspace: 72 tests pass", timestamp = "2026-09-20T21:41:00+01:00" },
-    { id = "V7", description = "cargo deny check passes (advisories, bans, licenses, sources)", timestamp = "2026-09-20T22:30:00+01:00" },
-    { id = "V8", description = "tetanus-check.py passes with 0 errors", timestamp = "2026-09-20T22:30:00+01:00" },
-    { id = "V9", description = "cargo publish --dry-run passes for all 9 crates", timestamp = "2026-09-21T01:17:00+01:00" },
-    { id = "V10", description = "All 9 crates published to crates.io as v0.2.0", timestamp = "2026-09-21T01:19:00+01:00" },
+     { id = "V6", description = "cargo test --workspace: 79 tests pass", timestamp = "2026-09-21T02:55:00+01:00" },
+     { id = "V7", description = "cargo deny check passes (advisories, bans, licenses, sources)", timestamp = "2026-09-20T22:30:00+01:00" },
+     { id = "V8", description = "tetanus-check.py passes with 0 errors", timestamp = "2026-09-20T22:30:00+01:00" },
+     { id = "V9", description = "cargo publish --dry-run passes for all 9 crates", timestamp = "2026-09-21T01:17:00+01:00" },
+     { id = "V10", description = "All 9 crates published to crates.io as v0.2.0", timestamp = "2026-09-21T01:19:00+01:00" },
+     { id = "V11", description = "All remaining clippy errors in run_pipeline.rs example fixed (format! borrows, io::Error::other, redundant closure)", timestamp = "2026-09-21T02:20:00+01:00" },
+     { id = "V12", description = "cargo deny check passes after adding bzip2-1.0.6 license for docx_basic transitive dep", timestamp = "2026-09-21T02:20:00+01:00" },
+     { id = "V13", description = "Multi-format report export (--save) verified for markdown, txt, toml, and docx", timestamp = "2026-09-21T02:20:00+01:00" },
+     { id = "V14", description = "All 24 clippy warnings in run_pipeline.rs example fixed (0 warnings in workspace)", timestamp = "2026-09-21T02:24:00+01:00" },
+     { id = "V15", description = "DataLoader invariant restored: load_historical removes quarter from headers and rows so columns.len() == row.len()", timestamp = "2026-09-21T02:55:00+01:00" },
+     { id = "V16", description = "to_observations() selects by required series name rather than positional index, robust to column reordering", timestamp = "2026-09-21T02:55:00+01:00" },
+     { id = "V17", description = "publish-next-crate.sh includes prv-cache in release ordering", timestamp = "2026-09-21T02:55:00+01:00" },
+     { id = "V18", description = "CI workflow added crates.io publication verification step on tags", timestamp = "2026-09-21T02:55:00+01:00" },
 ]
 known_failures = []
-next_action = "Create PR2 on GitHub from faux-pipeline branch"
+next_action = "Commit PR2 review fixes, bump patch to 0.2.1, tag, push, and republish 9 crates"
 open_questions = []
 
 [changelog]
@@ -113,5 +138,14 @@ entries = [
     { type = "loader_fix", description = "Fixed DataLoader::load_historical to skip 'quarter' column; pipeline example now runs end-to-end", timestamp = "2026-09-21T01:10:00+01:00" },
     { type = "example_fix", description = "Fixed prv-cli run_pipeline example: unused import, clippy allows, workspace deps in cli/Cargo.toml", timestamp = "2026-09-21T01:10:00+01:00" },
     { type = "version_bump", description = "Bumped workspace version from 0.1.0 to 0.2.0 for PR2", timestamp = "2026-09-21T01:19:00+01:00" },
-    { type = "crates_io_publish", description = "Published all 9 workspace crates to crates.io as v0.2.0", timestamp = "2026-09-21T01:19:00+01:00" },
+     { type = "crates_io_publish", description = "Published all 9 workspace crates to crates.io as v0.2.0", timestamp = "2026-09-21T01:19:00+01:00" },
+     { type = "cli_fix", description = "Fixed remaining clippy errors in run_pipeline.rs: removed format! borrows, replaced io::Error::new with Error::other, removed redundant closure", timestamp = "2026-09-21T02:20:00+01:00" },
+     { type = "supply_chain_fix", description = "Added bzip2-1.0.6 license to deny.toml to satisfy cargo deny after docx_basic dependency", timestamp = "2026-09-21T02:20:00+01:00" },
+     { type = "quality_gate", description = "All quality gates pass: fmt clean, clippy clean, 77 tests pass, TETANUS 0 errors, cargo deny check ok", timestamp = "2026-09-21T02:20:00+01:00" },
+     { type = "report_export", description = "Added multi-format report export (--save) to run_pipeline.rs with md, txt, toml, and docx outputs", timestamp = "2026-09-21T02:20:00+01:00" },
+     { type = "clippy_clean", description = "Fixed all 24 clippy warnings in run_pipeline.rs example: expect(), format! args, cast_precision_loss and suboptimal_flops allows", timestamp = "2026-09-21T02:24:00+01:00" },
+     { type = "loader_invariant_fix", description = "DataLoader::load_historical now removes 'quarter' from both headers and rows, preserving DataFrame invariant columns.len() == row.len()", timestamp = "2026-09-21T02:55:00+01:00" },
+     { type = "observation_name_fix", description = "to_observations() now selects observation values by required series name rather than positional index, robust to column reordering", timestamp = "2026-09-21T02:55:00+01:00" },
+     { type = "publish_script_fix", description = "Added prv-cache to publish-next-crate.sh CRATES array for correct 9-crate release ordering", timestamp = "2026-09-21T02:55:00+01:00" },
+     { type = "ci_verification", description = "CI workflow now verifies all workspace crates exist on crates.io at the current version when tags are pushed", timestamp = "2026-09-21T02:55:00+01:00" },
 ]

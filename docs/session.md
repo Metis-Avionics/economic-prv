@@ -1,12 +1,12 @@
 # Session
 
-- Last updated: 2026-09-21T01:13:00+01:00
+- Last updated: 2026-09-21T02:24:00+01:00
 - Phase: testing_and_cli_hardening
 - Status: implementation
 
 ## Summary
 
-Added 26 new unit tests across core/filter/monte_carlo/evaluation/data crates. Completed prv-cli living update and session handover to read from living.toml and specs/*.toml instead of hardcoded strings. Fixed DataLoader::load_historical to skip non-numeric 'quarter' column during CSV parsing. Verified full pipeline example (run_pipeline) executes end-to-end with faux_data.csv. All quality gates pass with 72 tests total.
+All quality gates green: fmt clean, clippy 0 errors (0 warnings in workspace), 77 tests pass, TETANUS 0 errors/0 warnings, cargo deny check ok. Multi-format report export (--save) implemented and verified for markdown, txt, toml, and docx formats. Fixed all 24 clippy warnings in run_pipeline.rs example. Ready for 0.2.1 release.
 
 ## Remaining
 

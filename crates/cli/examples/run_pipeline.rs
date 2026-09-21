@@ -20,8 +20,9 @@ use prv_monte_carlo::{ShockSpec, ShockType, Simulator};
 use prv_policy::{PolicyEngine, PolicyInstrument, PolicyWeights, Regime};
 use rand::prelude::*;
 use rand_distr::Normal;
+use docx_basic::Docx;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::Path;
 
 struct LinearObservationModel {
     h: DMatrix<f64>,
@@ -51,9 +52,10 @@ impl Model for NaiveRegime {
     }
 }
 
+#[allow(clippy::cast_precision_loss, clippy::suboptimal_flops)]
 fn generate_faux_csv(path: &str, seed: u64, rows: usize) -> std::io::Result<()> {
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
-    let normal = Normal::new(0.0, 0.5).unwrap();
+    let normal = Normal::new(0.0, 0.5).expect("normal distribution parameters are valid");
 
     let mut file = std::fs::File::create(path)?;
     writeln!(
@@ -248,10 +250,356 @@ fn generate_markdown_report(
     Ok(())
 }
 
+fn generate_toml_report(
+    path: &str,
+    seed: u64,
+    rows: usize,
+    df: &prv_data::DataFrame,
+    observations: &[prv_core::Observation],
+    final_state: &State,
+    mc_mean: &State,
+    policy: &prv_policy::PolicyDistribution,
+    metrics: &prv_evaluation::MetricResults,
+) -> std::io::Result<()> {
+    let dims = [
+        "capacity",
+        "investment",
+        "labour_absorption",
+        "fiscal_capacity",
+        "demand_pressure",
+        "housing_pressure",
+        "geopolitical_load",
+        "migration_pressure",
+    ];
+    let state_vals: Vec<f64> = final_state.as_vector().iter().copied().collect();
+    let mc_vals: Vec<f64> = mc_mean.as_vector().iter().copied().collect();
+
+    let mut toml = String::new();
+    toml.push_str("# PRV Pipeline Report\n");
+    toml.push_str("# This file explains what each numeric output means.\n\n");
+    toml.push_str("[report]\n");
+    toml.push_str(&format!("generated = \"{}\"\n", chrono::Utc::now().to_rfc3339()));
+    toml.push_str(&format!("seed = {seed}\n"));
+    toml.push_str(&format!("rows = {rows}\n\n"));
+
+    toml.push_str("[dataset]\n");
+    toml.push_str(&format!("rows_loaded = {}\n", df.row_count));
+    toml.push_str(&format!("observations_generated = {}\n", observations.len()));
+    toml.push_str("columns = [\n");
+    for col in &df.columns {
+        toml.push_str(&format!("  \"{col}\",\n"));
+    }
+    toml.push_str("]\n\n");
+
+    toml.push_str("# EKF state estimate: 8-dimensional latent state after processing all observations.\n");
+    toml.push_str("# - capacity: productive capacity utilization\n");
+    toml.push_str("# - investment: gross fixed capital formation level\n");
+    toml.push_str("# - labour_absorption: employment intensity\n");
+    toml.push_str("# - fiscal_capacity: government fiscal headroom\n");
+    toml.push_str("# - demand_pressure: aggregate demand pressure\n");
+    toml.push_str("# - housing_pressure: housing market pressure\n");
+    toml.push_str("# - geopolitical_load: geopolitical stress loading\n");
+    toml.push_str("# - migration_pressure: migration system pressure\n\n");
+    toml.push_str("[ekf]\n");
+    for (name, val) in dims.iter().zip(state_vals.iter()) {
+        toml.push_str(&format!("{name} = {val:.6}\n"));
+    }
+    toml.push_str("\n");
+
+    toml.push_str("# Monte Carlo mean state: average of 100 simulated 8-quarter paths under shock scenarios.\n");
+    toml.push_str("# Shock specs: Demand (amplitude=0.05, persistence=0.8) and Geopolitical (amplitude=0.03, persistence=0.9).\n\n");
+    toml.push_str("[monte_carlo]\n");
+    for (name, val) in dims.iter().zip(mc_vals.iter()) {
+        toml.push_str(&format!("{name} = {val:.6}\n"));
+    }
+    toml.push_str("\n");
+
+    toml.push_str("# Policy recommended actions: scores in [0,1] for each instrument under Expansion regime.\n");
+    toml.push_str("# Higher values indicate stronger recommended deployment.\n\n");
+    toml.push_str("[policy]\n");
+    for instrument in [
+        PolicyInstrument::InterestRate,
+        PolicyInstrument::QuantitativeEasing,
+        PolicyInstrument::SovereignWealthFundDeployment,
+        PolicyInstrument::FiscalSpending,
+        PolicyInstrument::Taxation,
+        PolicyInstrument::InfrastructureInvestment,
+        PolicyInstrument::MigrationCapacity,
+    ] {
+        let score = policy
+            .recommended_action_distribution
+            .get(&instrument)
+            .copied()
+            .unwrap_or(0.0);
+        toml.push_str(&format!("{instrument:?} = {score:.6}\n"));
+    }
+    if policy.constraint_violations.is_empty() {
+        toml.push_str("constraint_violations = []\n");
+    } else {
+        toml.push_str(&format!("constraint_violations = {:?}\n", policy.constraint_violations));
+    }
+    toml.push_str("\n");
+
+    toml.push_str("# Backtest metrics: rolling out-of-sample evaluation against a naive baseline model.\n");
+    toml.push_str("# - rmse: root mean squared error\n");
+    toml.push_str("# - mae: mean absolute error\n");
+    toml.push_str("# - calibration_score: reliability of probabilistic forecasts\n");
+    toml.push_str("# - brier_score: proper scoring rule for binary outcomes\n");
+    toml.push_str("# - log_loss: logarithmic loss for probabilistic predictions\n\n");
+    toml.push_str("[backtest]\n");
+    toml.push_str(&format!("rmse = {:.6}\n", metrics.rmse));
+    toml.push_str(&format!("mae = {:.6}\n", metrics.mae));
+    toml.push_str(&format!("calibration_score = {:.6}\n", metrics.calibration_score));
+    toml.push_str(&format!("brier_score = {:.6}\n", metrics.brier_score));
+    toml.push_str(&format!("log_loss = {:.6}\n", metrics.log_loss));
+
+    std::fs::write(path, toml)?;
+    Ok(())
+}
+
+fn generate_txt_report(
+    path: &str,
+    seed: u64,
+    rows: usize,
+    df: &prv_data::DataFrame,
+    observations: &[prv_core::Observation],
+    final_state: &State,
+    mc_mean: &State,
+    policy: &prv_policy::PolicyDistribution,
+    metrics: &prv_evaluation::MetricResults,
+) -> std::io::Result<()> {
+    let mut txt = String::new();
+    txt.push_str("PRV Pipeline Report\n");
+    txt.push_str("==================\n\n");
+    txt.push_str(&format!("Generated: {}\n", chrono::Utc::now().to_rfc3339()));
+    txt.push_str(&format!("Seed: {seed}\n"));
+    txt.push_str(&format!("Rows: {rows}\n\n"));
+
+    txt.push_str("Faux Dataset\n");
+    txt.push_str("------------\n");
+    txt.push_str("The faux dataset is a synthetically generated quarterly economic time series\n");
+    txt.push_str("designed to exercise the full PRV pipeline. It combines cyclical patterns,\n");
+    txt.push_str("Gaussian noise, cross-series coupling, and realistic bounds.\n\n");
+    txt.push_str(&format!("Loaded {} rows x {} columns.\n", df.row_count, df.columns.len()));
+    txt.push_str("Columns:\n");
+    for col in &df.columns {
+        let desc = match col.as_str() {
+            "gdp_growth" => "Quarterly GDP growth rate (%)",
+            "inflation" => "Consumer price inflation (%)",
+            "unemployment" => "Unemployment rate (%)",
+            "interest_rate" => "Central bank policy rate (%)",
+            "fiscal_balance" => "Government fiscal balance (% GDP)",
+            "current_account" => "Current account balance (% GDP)",
+            "housing_price_index" => "Housing price index (2015=100)",
+            "consumer_confidence" => "Consumer confidence index",
+            "investment_flow" => "Gross fixed capital formation (% GDP)",
+            "exchange_rate" => "Nominal effective exchange rate",
+            "geopolitical_tension_index" => "Synthetic geopolitical tension (0-1)",
+            "sanctions_exposure" => "Sanctions exposure index (0-1)",
+            "alliance_stability" => "Alliance stability index (0-1)",
+            _ => "Economic indicator",
+        };
+        txt.push_str(&format!("  {col}: {desc}\n"));
+    }
+    txt.push_str("\n");
+
+    txt.push_str("Pipeline Results\n");
+    txt.push_str("-----------------\n\n");
+
+    txt.push_str("Data Loading\n");
+    txt.push_str(&format!("  Rows loaded: {}\n", df.row_count));
+    txt.push_str(&format!("  Observations generated: {}\n\n", observations.len()));
+
+    txt.push_str("EKF State Estimate\n");
+    txt.push_str("  The EKF produces an 8-dimensional latent state after ingesting all observations.\n");
+    let dims = [
+        ("capacity", "productive capacity utilization"),
+        ("investment", "gross fixed capital formation level"),
+        ("labour_absorption", "employment intensity"),
+        ("fiscal_capacity", "government fiscal headroom"),
+        ("demand_pressure", "aggregate demand pressure"),
+        ("housing_pressure", "housing market pressure"),
+        ("geopolitical_load", "geopolitical stress loading"),
+        ("migration_pressure", "migration system pressure"),
+    ];
+    for ((name, desc), val) in dims.iter().zip(final_state.as_vector().iter()) {
+        txt.push_str(&format!("  {name}: {val:.4}  # {desc}\n"));
+    }
+    txt.push_str("\n");
+
+    txt.push_str("Monte Carlo Simulation\n");
+    txt.push_str("  100 paths, 8-quarter horizon, Cholesky sampling with eigenvalue fallback.\n");
+    txt.push_str("  Mean state across all simulated paths:\n");
+    for ((name, _), val) in dims.iter().zip(mc_mean.as_vector().iter()) {
+        txt.push_str(&format!("  {name}: {val:.4}\n"));
+    }
+    txt.push_str("\n");
+
+    txt.push_str("Policy Evaluation\n");
+    txt.push_str("  Stochastic policy engine under Expansion regime. Scores are in [0,1].\n");
+    txt.push_str("  Higher values indicate stronger recommended deployment.\n");
+    for instrument in [
+        PolicyInstrument::InterestRate,
+        PolicyInstrument::QuantitativeEasing,
+        PolicyInstrument::SovereignWealthFundDeployment,
+        PolicyInstrument::FiscalSpending,
+        PolicyInstrument::Taxation,
+        PolicyInstrument::InfrastructureInvestment,
+        PolicyInstrument::MigrationCapacity,
+    ] {
+        let score = policy
+            .recommended_action_distribution
+            .get(&instrument)
+            .copied()
+            .unwrap_or(0.0);
+        txt.push_str(&format!("  {instrument:?}: {score:.4}\n"));
+    }
+    if policy.constraint_violations.is_empty() {
+        txt.push_str("  Constraint violations: None\n");
+    } else {
+        txt.push_str(&format!("  Constraint violations: {}\n", policy.constraint_violations.join(", ")));
+    }
+    txt.push_str("\n");
+
+    txt.push_str("Backtest Metrics\n");
+    txt.push_str("  Rolling out-of-sample evaluation against a naive baseline model.\n");
+    txt.push_str(&format!("  RMSE: {:.6}  # root mean squared error\n", metrics.rmse));
+    txt.push_str(&format!("  MAE: {:.6}  # mean absolute error\n", metrics.mae));
+    txt.push_str(&format!("  Calibration score: {:.6}  # reliability of probabilistic forecasts\n", metrics.calibration_score));
+    txt.push_str(&format!("  Brier score: {:.6}  # proper scoring rule for binary outcomes\n", metrics.brier_score));
+    txt.push_str(&format!("  Log loss: {:.6}  # logarithmic loss for probabilistic predictions\n", metrics.log_loss));
+    txt.push_str("\n");
+    txt.push_str("Generated by prv-cli example run_pipeline.\n");
+
+    std::fs::write(path, txt)?;
+    Ok(())
+}
+
+fn generate_docx_report(
+    path: &str,
+    seed: u64,
+    rows: usize,
+    df: &prv_data::DataFrame,
+    observations: &[prv_core::Observation],
+    final_state: &State,
+    mc_mean: &State,
+    policy: &prv_policy::PolicyDistribution,
+    metrics: &prv_evaluation::MetricResults,
+) -> std::io::Result<()> {
+    let mut doc = Docx::new();
+
+    doc = doc
+        .paragraph_with(|p| p.push_text("PRV Pipeline Report"))
+        .paragraph_with(|p| p.push_text(format!("Generated: {}", chrono::Utc::now().to_rfc3339())))
+        .paragraph_with(|p| p.push_text(format!("Seed: {seed}")))
+        .paragraph_with(|p| p.push_text(format!("Rows: {rows}")))
+        .paragraph_with(|p| p.push_text(""));
+
+    doc = doc
+        .paragraph_with(|p| p.push_text("Faux Dataset"))
+        .paragraph_with(|p| p.push_text("The faux dataset is a synthetically generated quarterly economic time series designed to exercise the full PRV pipeline. It combines cyclical patterns, Gaussian noise, cross-series coupling, and realistic bounds."))
+        .paragraph_with(|p| p.push_text(format!("Loaded {} rows x {} columns.", df.row_count, df.columns.len())))
+        .paragraph_with(|p| p.push_text("Columns:"));
+
+    for col in &df.columns {
+        let desc = match col.as_str() {
+            "gdp_growth" => "Quarterly GDP growth rate (%)",
+            "inflation" => "Consumer price inflation (%)",
+            "unemployment" => "Unemployment rate (%)",
+            "interest_rate" => "Central bank policy rate (%)",
+            "fiscal_balance" => "Government fiscal balance (% GDP)",
+            "current_account" => "Current account balance (% GDP)",
+            "housing_price_index" => "Housing price index (2015=100)",
+            "consumer_confidence" => "Consumer confidence index",
+            "investment_flow" => "Gross fixed capital formation (% GDP)",
+            "exchange_rate" => "Nominal effective exchange rate",
+            "geopolitical_tension_index" => "Synthetic geopolitical tension (0-1)",
+            "sanctions_exposure" => "Sanctions exposure index (0-1)",
+            "alliance_stability" => "Alliance stability index (0-1)",
+            _ => "Economic indicator",
+        };
+        doc = doc.paragraph_with(|p| p.push_text(format!("{col}: {desc}")));
+    }
+
+    doc = doc.paragraph_with(|p| p.push_text(""));
+
+    doc = doc
+        .paragraph_with(|p| p.push_text("Pipeline Results"))
+        .paragraph_with(|p| p.push_text("Data Loading"))
+        .paragraph_with(|p| p.push_text(format!("Rows loaded: {}. Observations generated: {}.", df.row_count, observations.len())));
+
+    doc = doc
+        .paragraph_with(|p| p.push_text("EKF State Estimate"))
+        .paragraph_with(|p| p.push_text("The EKF produces an 8-dimensional latent state after ingesting all observations."));
+
+    let dims = [
+        ("capacity", "productive capacity utilization"),
+        ("investment", "gross fixed capital formation level"),
+        ("labour_absorption", "employment intensity"),
+        ("fiscal_capacity", "government fiscal headroom"),
+        ("demand_pressure", "aggregate demand pressure"),
+        ("housing_pressure", "housing market pressure"),
+        ("geopolitical_load", "geopolitical stress loading"),
+        ("migration_pressure", "migration system pressure"),
+    ];
+    for ((name, desc), val) in dims.iter().zip(final_state.as_vector().iter()) {
+        doc = doc.paragraph_with(|p| p.push_text(format!("{name}: {val:.4}  # {desc}")));
+    }
+
+    doc = doc
+        .paragraph_with(|p| p.push_text("Monte Carlo Simulation"))
+        .paragraph_with(|p| p.push_text("100 paths, 8-quarter horizon, Cholesky sampling with eigenvalue fallback. Mean state across all simulated paths:"));
+
+    for ((name, _), val) in dims.iter().zip(mc_mean.as_vector().iter()) {
+        doc = doc.paragraph_with(|p| p.push_text(format!("{name}: {val:.4}")));
+    }
+
+    doc = doc
+        .paragraph_with(|p| p.push_text("Policy Evaluation"))
+        .paragraph_with(|p| p.push_text("Stochastic policy engine under Expansion regime. Scores are in [0,1]. Higher values indicate stronger recommended deployment."));
+
+    for instrument in [
+        PolicyInstrument::InterestRate,
+        PolicyInstrument::QuantitativeEasing,
+        PolicyInstrument::SovereignWealthFundDeployment,
+        PolicyInstrument::FiscalSpending,
+        PolicyInstrument::Taxation,
+        PolicyInstrument::InfrastructureInvestment,
+        PolicyInstrument::MigrationCapacity,
+    ] {
+        let score = policy
+            .recommended_action_distribution
+            .get(&instrument)
+            .copied()
+            .unwrap_or(0.0);
+        doc = doc.paragraph_with(|p| p.push_text(format!("{instrument:?}: {score:.4}")));
+    }
+    if policy.constraint_violations.is_empty() {
+        doc = doc.paragraph_with(|p| p.push_text("Constraint violations: None"));
+    } else {
+        doc = doc.paragraph_with(|p| p.push_text(format!("Constraint violations: {}", policy.constraint_violations.join(", "))));
+    }
+
+    doc = doc
+        .paragraph_with(|p| p.push_text("Backtest Metrics"))
+        .paragraph_with(|p| p.push_text("Rolling out-of-sample evaluation against a naive baseline model."))
+        .paragraph_with(|p| p.push_text(format!("RMSE: {:.6}  # root mean squared error", metrics.rmse)))
+        .paragraph_with(|p| p.push_text(format!("MAE: {:.6}  # mean absolute error", metrics.mae)))
+        .paragraph_with(|p| p.push_text(format!("Calibration score: {:.6}  # reliability of probabilistic forecasts", metrics.calibration_score)))
+        .paragraph_with(|p| p.push_text(format!("Brier score: {:.6}  # proper scoring rule for binary outcomes", metrics.brier_score)))
+        .paragraph_with(|p| p.push_text(format!("Log loss: {:.6}  # logarithmic loss for probabilistic predictions", metrics.log_loss)))
+        .paragraph_with(|p| p.push_text(""))
+        .paragraph_with(|p| p.push_text("Generated by prv-cli example run_pipeline."));
+
+    doc.write_file(path)
+        .map_err(std::io::Error::other)?;
+    Ok(())
+}
+
 fn print_usage() {
     println!("Usage: run_pipeline [OPTIONS]\n");
     println!("Options:");
-    println!("  --save <PATH>     Save markdown report to PATH");
+    println!("  --save <PATH>     Save report to PATH (format auto-detected from extension: md, txt, toml, docx)");
     println!("  --seed <N>        Random seed for data generation (default: 42)");
     println!("  --rows <N>        Number of faux data rows to generate (default: 20, min: 4)");
     println!("  --help            Print this help message");
@@ -260,6 +608,7 @@ fn print_usage() {
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let mut save_path = None;
+    let mut save_format = "md";
     let mut seed = 42u64;
     let mut rows = 20usize;
 
@@ -270,6 +619,14 @@ fn main() {
                 i += 1;
                 if i < args.len() {
                     save_path = Some(args[i].clone());
+                    if let Some(ext) = Path::new(&args[i]).extension().and_then(|e| e.to_str()) {
+                        save_format = match ext.to_lowercase().as_str() {
+                            "txt" => "txt",
+                            "toml" => "toml",
+                            "docx" => "docx",
+                            _ => "md",
+                        };
+                    }
                 }
             }
             "--seed" => {
@@ -416,17 +773,54 @@ fn main() {
     }
 
     if let Some(path) = save_path {
-        if let Err(e) = generate_markdown_report(
-            &path,
-            seed,
-            rows,
-            &df,
-            &observations,
-            &ekf.x_hat,
-            &mc.mean,
-            &policy,
-            &results.metrics,
-        ) {
+        let result = match save_format {
+            "txt" => generate_txt_report(
+                &path,
+                seed,
+                rows,
+                &df,
+                &observations,
+                &ekf.x_hat,
+                &mc.mean,
+                &policy,
+                &results.metrics,
+            ),
+            "toml" => generate_toml_report(
+                &path,
+                seed,
+                rows,
+                &df,
+                &observations,
+                &ekf.x_hat,
+                &mc.mean,
+                &policy,
+                &results.metrics,
+            ),
+            "docx" => generate_docx_report(
+                &path,
+                seed,
+                rows,
+                &df,
+                &observations,
+                &ekf.x_hat,
+                &mc.mean,
+                &policy,
+                &results.metrics,
+            ),
+            _ => generate_markdown_report(
+                &path,
+                seed,
+                rows,
+                &df,
+                &observations,
+                &ekf.x_hat,
+                &mc.mean,
+                &policy,
+                &results.metrics,
+            ),
+        };
+
+        if let Err(e) = result {
             eprintln!("Failed to save report: {e}");
             return;
         }

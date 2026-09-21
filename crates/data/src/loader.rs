@@ -74,6 +74,13 @@ impl DataLoader {
 
         let quarter_idx = headers.iter().position(|h| h == "quarter");
 
+        let numeric_headers: Vec<String> = headers
+            .into_iter()
+            .enumerate()
+            .filter(|(i, _)| quarter_idx != Some(*i))
+            .map(|(_, h)| h)
+            .collect();
+
         let mut data = Vec::new();
         for result in reader.records() {
             let record = result.map_err(|e| DataError::IoError(e.to_string()))?;
@@ -89,7 +96,7 @@ impl DataLoader {
             data.push(row);
         }
 
-        let frame = DataFrame::new(headers, data).with_source(Some(path.to_string()));
+        let frame = DataFrame::new(numeric_headers, data).with_source(Some(path.to_string()));
         self.cache.set(path, frame.clone());
         Ok(frame)
     }
@@ -227,13 +234,17 @@ impl DataLoader {
         }
 
         let mut observations = Vec::with_capacity(data.row_count);
+        let lower_columns: Vec<String> = data.columns.iter().map(|c| c.to_lowercase()).collect();
+
         for row in &data.data {
-            if row.len() < 10 {
-                return Err(DataError::ParseError(
-                    "Row has fewer than 10 elements".to_string(),
-                ));
+            let mut values_vec = Vec::with_capacity(10);
+            for req in &required {
+                let idx = lower_columns
+                    .iter()
+                    .position(|c| c == &req.to_lowercase())
+                    .ok_or_else(|| DataError::ParseError(format!("Missing required series: {req}")))?;
+                values_vec.push(row[idx]);
             }
-            let values_vec = row[..10].to_vec();
             observations.push(prv_core::Observation::new(values_vec));
         }
 
@@ -359,5 +370,50 @@ mod tests {
         let obs = loader.to_observations(&df).unwrap();
         assert_eq!(obs.len(), 5);
         assert_eq!(obs[0].as_vector().len(), 10);
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn to_observations_selects_by_name_not_position() {
+        let df = DataFrame::new(
+            vec![
+                "exchange_rate".to_string(),
+                "gdp_growth".to_string(),
+                "inflation".to_string(),
+                "unemployment".to_string(),
+                "interest_rate".to_string(),
+                "fiscal_balance".to_string(),
+                "current_account".to_string(),
+                "housing_price_index".to_string(),
+                "consumer_confidence".to_string(),
+                "investment_flow".to_string(),
+                "geopolitical_tension_index".to_string(),
+                "sanctions_exposure".to_string(),
+                "alliance_stability".to_string(),
+            ],
+            vec![vec![10.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 11.0, 12.0, 13.0]],
+        );
+        let loader = DataLoader::new();
+        let obs = loader.to_observations(&df).unwrap();
+        assert_eq!(obs.len(), 1);
+        let v = obs[0].as_vector();
+        assert_eq!(v.len(), 10);
+        assert_eq!(v[0], 1.0);
+        assert_eq!(v[1], 2.0);
+        assert_eq!(v[2], 3.0);
+    }
+
+    #[test]
+    fn load_historical_removes_quarter_from_headers_and_rows() {
+        let csv = "quarter,gdp_growth,inflation\n2020Q1,1.0,2.0\n2020Q2,3.0,4.0\n";
+        let path = "/tmp/test_quarter.csv";
+        std::fs::write(path, csv).unwrap();
+        let loader = DataLoader::new();
+        let df = loader.load_historical(path).unwrap();
+        assert_eq!(df.columns.len(), 2);
+        assert_eq!(df.columns, vec!["gdp_growth", "inflation"]);
+        assert_eq!(df.data.len(), 2);
+        assert_eq!(df.data[0].len(), 2);
+        assert_eq!(df.data[1].len(), 2);
     }
 }

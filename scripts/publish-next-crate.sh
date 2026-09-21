@@ -3,7 +3,7 @@ set -euo pipefail
 cd /home/leo/prv
 
 STATE_FILE="/home/leo/prv/.publish-state"
-CRATES=("prv-core" "prv-geometry" "prv-filter" "prv-data" "prv-monte-carlo" "prv-policy" "prv-evaluation" "prv-cli")
+CRATES=("prv-core" "prv-cache" "prv-filter" "prv-geometry" "prv-monte-carlo" "prv-policy" "prv-data" "prv-evaluation" "prv-cli")
 
 if [ ! -f "$STATE_FILE" ]; then
   echo 0 > "$STATE_FILE"

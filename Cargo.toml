@@ -41,6 +41,7 @@ themql-core = "0.1"
 themql-runtime = { version = "0.1", features = ["desktop"] }
 tokio = { version = "1", features = ["full"] }
 dashmap = "6.1"
+docx_basic = "0.1"
 
 [workspace.lints.rust]
 unsafe_code = "deny"
