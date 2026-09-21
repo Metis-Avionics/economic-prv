@@ -68,6 +68,9 @@ completed = [
       { id = "C47", description = "Fixed Markdown Monte Carlo report bug: generate_markdown_report now uses mc_mean.as_vector() instead of reusing EKF dims array", timestamp = "2026-09-21T03:11:00+01:00" },
       { id = "C48", description = "Narrowed Clippy blanket exemptions in run_pipeline.rs: removed used_underscore_binding, too_many_lines, expect_used, use_debug, let_underscore_must_use, too_many_arguments, single_char_add_str, format_push_string; added inline #[allow] with TETANUS-exempt comments", timestamp = "2026-09-21T03:11:00+01:00" },
       { id = "C49", description = "Bumped workspace version 0.2.0 -> 0.2.1 in Cargo.toml and spec.toml", timestamp = "2026-09-21T03:11:00+01:00" },
+      { id = "C50", description = "Created git tag v0.2.1 and pushed to origin", timestamp = "2026-09-21T03:43:00+01:00" },
+      { id = "C51", description = "Created GitHub release v0.2.1 with PR2 review fixes summary", timestamp = "2026-09-21T03:43:00+01:00" },
+      { id = "C52", description = "Published all 9 workspace crates to crates.io as v0.2.1", timestamp = "2026-09-21T03:43:00+01:00" },
 ]
 changed = [
     "crates/core/src/prv.rs — added PressureReleaseValve tests (value, zero capacity, positive)",
@@ -110,10 +113,12 @@ validated = [
      { id = "V15", description = "DataLoader invariant restored: load_historical removes quarter from headers and rows so columns.len() == row.len()", timestamp = "2026-09-21T02:55:00+01:00" },
      { id = "V16", description = "to_observations() selects by required series name rather than positional index, robust to column reordering", timestamp = "2026-09-21T02:55:00+01:00" },
      { id = "V17", description = "publish-next-crate.sh includes prv-cache in release ordering", timestamp = "2026-09-21T02:55:00+01:00" },
-     { id = "V18", description = "CI workflow added crates.io publication verification step on tags", timestamp = "2026-09-21T02:55:00+01:00" },
+      { id = "V18", description = "CI workflow added crates.io publication verification step on tags", timestamp = "2026-09-21T02:55:00+01:00" },
+      { id = "V19", description = "Created GitHub release v0.2.1 at https://github.com/Metis-Avionics/economic-prv/releases/tag/v0.2.1", timestamp = "2026-09-21T03:43:00+01:00" },
+      { id = "V20", description = "Published all 9 workspace crates to crates.io as v0.2.1", timestamp = "2026-09-21T03:43:00+01:00" },
 ]
 known_failures = []
-next_action = "Tag v0.2.1, push, and republish 9 crates to crates.io after PR review"
+next_action = "Merge PR2 after adversarial review; no further release action pending"
 open_questions = []
 
 [changelog]
