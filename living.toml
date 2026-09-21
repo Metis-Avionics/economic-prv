@@ -64,7 +64,10 @@ completed = [
      { id = "C43", description = "Fixed DataLoader invariant: load_historical now removes 'quarter' from both headers and rows so columns.len() == row.len()", timestamp = "2026-09-21T02:55:00+01:00" },
      { id = "C44", description = "Fixed to_observations() to select observation values by required series name rather than positional index, making it robust to column reordering", timestamp = "2026-09-21T02:55:00+01:00" },
      { id = "C45", description = "Added prv-cache to publish-next-crate.sh release ordering (was missing from 9-crate publish list)", timestamp = "2026-09-21T02:55:00+01:00" },
-     { id = "C46", description = "Added crates.io publication verification step to CI workflow that runs on tags", timestamp = "2026-09-21T02:55:00+01:00" },
+      { id = "C46", description = "Added crates.io publication verification step to CI workflow that runs on tags", timestamp = "2026-09-21T02:55:00+01:00" },
+      { id = "C47", description = "Fixed Markdown Monte Carlo report bug: generate_markdown_report now uses mc_mean.as_vector() instead of reusing EKF dims array", timestamp = "2026-09-21T03:11:00+01:00" },
+      { id = "C48", description = "Narrowed Clippy blanket exemptions in run_pipeline.rs: removed used_underscore_binding, too_many_lines, expect_used, use_debug, let_underscore_must_use, too_many_arguments, single_char_add_str, format_push_string; added inline #[allow] with TETANUS-exempt comments", timestamp = "2026-09-21T03:11:00+01:00" },
+      { id = "C49", description = "Bumped workspace version 0.2.0 -> 0.2.1 in Cargo.toml and spec.toml", timestamp = "2026-09-21T03:11:00+01:00" },
 ]
 changed = [
     "crates/core/src/prv.rs — added PressureReleaseValve tests (value, zero capacity, positive)",
@@ -110,7 +113,7 @@ validated = [
      { id = "V18", description = "CI workflow added crates.io publication verification step on tags", timestamp = "2026-09-21T02:55:00+01:00" },
 ]
 known_failures = []
-next_action = "Commit PR2 review fixes, bump patch to 0.2.1, tag, push, and republish 9 crates"
+next_action = "Tag v0.2.1, push, and republish 9 crates to crates.io after PR review"
 open_questions = []
 
 [changelog]

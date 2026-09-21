@@ -242,7 +242,9 @@ impl DataLoader {
                 let idx = lower_columns
                     .iter()
                     .position(|c| c == &req.to_lowercase())
-                    .ok_or_else(|| DataError::ParseError(format!("Missing required series: {req}")))?;
+                    .ok_or_else(|| {
+                        DataError::ParseError(format!("Missing required series: {req}"))
+                    })?;
                 values_vec.push(row[idx]);
             }
             observations.push(prv_core::Observation::new(values_vec));
@@ -391,7 +393,9 @@ mod tests {
                 "sanctions_exposure".to_string(),
                 "alliance_stability".to_string(),
             ],
-            vec![vec![10.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 11.0, 12.0, 13.0]],
+            vec![vec![
+                10.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 11.0, 12.0, 13.0,
+            ]],
         );
         let loader = DataLoader::new();
         let obs = loader.to_observations(&df).unwrap();

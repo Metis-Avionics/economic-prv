@@ -1179,7 +1179,7 @@ dependencies = [
 
 [[package]]
 name = "prv-cache"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "dashmap",
  "serde",
@@ -1192,7 +1192,7 @@ dependencies = [
 
 [[package]]
 name = "prv-cli"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1218,7 +1218,7 @@ dependencies = [
 
 [[package]]
 name = "prv-core"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "chrono",
  "nalgebra",
@@ -1229,7 +1229,7 @@ dependencies = [
 
 [[package]]
 name = "prv-data"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "chrono",
  "csv",
@@ -1244,7 +1244,7 @@ dependencies = [
 
 [[package]]
 name = "prv-evaluation"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "chrono",
  "nalgebra",
@@ -1263,7 +1263,7 @@ dependencies = [
 
 [[package]]
 name = "prv-filter"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "nalgebra",
  "prv-core",
@@ -1274,7 +1274,7 @@ dependencies = [
 
 [[package]]
 name = "prv-geometry"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "nalgebra",
  "prv-core",
@@ -1286,7 +1286,7 @@ dependencies = [
 
 [[package]]
 name = "prv-monte-carlo"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "nalgebra",
  "ndarray",
@@ -1301,7 +1301,7 @@ dependencies = [
 
 [[package]]
 name = "prv-policy"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "nalgebra",
  "ndarray",

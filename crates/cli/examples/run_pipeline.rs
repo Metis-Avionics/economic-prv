@@ -1,16 +1,6 @@
-#![allow(
-    clippy::print_stdout,
-    clippy::print_stderr,
-    clippy::too_many_lines,
-    clippy::used_underscore_binding,
-    clippy::expect_used,
-    clippy::use_debug,
-    clippy::let_underscore_must_use,
-    clippy::too_many_arguments,
-    clippy::single_char_add_str,
-    clippy::format_push_string
-)]
+#![allow(clippy::print_stdout, clippy::print_stderr)]
 
+use docx_basic::Docx;
 use nalgebra::{DMatrix, SMatrix};
 use prv_core::{Observation, State, TimeSeries};
 use prv_data::DataLoader;
@@ -20,7 +10,6 @@ use prv_monte_carlo::{ShockSpec, ShockType, Simulator};
 use prv_policy::{PolicyEngine, PolicyInstrument, PolicyWeights, Regime};
 use rand::prelude::*;
 use rand_distr::Normal;
-use docx_basic::Docx;
 use std::io::Write;
 use std::path::Path;
 
@@ -55,6 +44,7 @@ impl Model for NaiveRegime {
 #[allow(clippy::cast_precision_loss, clippy::suboptimal_flops)]
 fn generate_faux_csv(path: &str, seed: u64, rows: usize) -> std::io::Result<()> {
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
+    #[allow(clippy::expect_used)]
     let normal = Normal::new(0.0, 0.5).expect("normal distribution parameters are valid");
 
     let mut file = std::fs::File::create(path)?;
@@ -95,6 +85,13 @@ fn generate_faux_csv(path: &str, seed: u64, rows: usize) -> std::io::Result<()> 
     Ok(())
 }
 
+#[allow(
+    clippy::too_many_lines,
+    clippy::too_many_arguments,
+    clippy::single_char_add_str,
+    clippy::format_push_string
+)]
+// TETANUS-exempt(power10-04): report generator is I/O formatting, not control logic; refactoring to 60-line functions is low-value
 fn generate_markdown_report(
     path: &str,
     seed: u64,
@@ -102,7 +99,7 @@ fn generate_markdown_report(
     df: &prv_data::DataFrame,
     observations: &[prv_core::Observation],
     final_state: &State,
-    _mc_mean: &State,
+    mc_mean: &State,
     policy: &prv_policy::PolicyDistribution,
     metrics: &prv_evaluation::MetricResults,
 ) -> std::io::Result<()> {
@@ -180,6 +177,16 @@ fn generate_markdown_report(
         ("geopolitical_load", final_state.as_vector()[6]),
         ("migration_pressure", final_state.as_vector()[7]),
     ];
+    let mc_dims = [
+        ("capacity", mc_mean.as_vector()[0]),
+        ("investment", mc_mean.as_vector()[1]),
+        ("labour_absorption", mc_mean.as_vector()[2]),
+        ("fiscal_capacity", mc_mean.as_vector()[3]),
+        ("demand_pressure", mc_mean.as_vector()[4]),
+        ("housing_pressure", mc_mean.as_vector()[5]),
+        ("geopolitical_load", mc_mean.as_vector()[6]),
+        ("migration_pressure", mc_mean.as_vector()[7]),
+    ];
     for (name, val) in dims {
         md.push_str(&format!("| {name} | {val:.4} |\n"));
     }
@@ -188,7 +195,7 @@ fn generate_markdown_report(
     md.push_str("### Monte Carlo Simulation\n\n");
     md.push_str("| Dimension | Mean |\n");
     md.push_str("|-----------|------|\n");
-    for (name, val) in dims {
+    for (name, val) in mc_dims {
         md.push_str(&format!("| {name} | {val:.4} |\n"));
     }
     md.push_str("\n");
@@ -210,7 +217,10 @@ fn generate_markdown_report(
             .get(&instrument)
             .copied()
             .unwrap_or(0.0);
-        md.push_str(&format!("| {instrument:?} | {score:.4} |\n"));
+        #[allow(clippy::use_debug)]
+        {
+            md.push_str(&format!("| {instrument:?} | {score:.4} |\n"));
+        }
     }
     if policy.constraint_violations.is_empty() {
         md.push_str("\n**Constraint violations:** None\n");
@@ -250,6 +260,13 @@ fn generate_markdown_report(
     Ok(())
 }
 
+#[allow(
+    clippy::too_many_lines,
+    clippy::too_many_arguments,
+    clippy::single_char_add_str,
+    clippy::format_push_string
+)]
+// TETANUS-exempt(power10-04): report generator is I/O formatting, not control logic; refactoring to 60-line functions is low-value
 fn generate_toml_report(
     path: &str,
     seed: u64,
@@ -278,20 +295,28 @@ fn generate_toml_report(
     toml.push_str("# PRV Pipeline Report\n");
     toml.push_str("# This file explains what each numeric output means.\n\n");
     toml.push_str("[report]\n");
-    toml.push_str(&format!("generated = \"{}\"\n", chrono::Utc::now().to_rfc3339()));
+    toml.push_str(&format!(
+        "generated = \"{}\"\n",
+        chrono::Utc::now().to_rfc3339()
+    ));
     toml.push_str(&format!("seed = {seed}\n"));
     toml.push_str(&format!("rows = {rows}\n\n"));
 
     toml.push_str("[dataset]\n");
     toml.push_str(&format!("rows_loaded = {}\n", df.row_count));
-    toml.push_str(&format!("observations_generated = {}\n", observations.len()));
+    toml.push_str(&format!(
+        "observations_generated = {}\n",
+        observations.len()
+    ));
     toml.push_str("columns = [\n");
     for col in &df.columns {
         toml.push_str(&format!("  \"{col}\",\n"));
     }
     toml.push_str("]\n\n");
 
-    toml.push_str("# EKF state estimate: 8-dimensional latent state after processing all observations.\n");
+    toml.push_str(
+        "# EKF state estimate: 8-dimensional latent state after processing all observations.\n",
+    );
     toml.push_str("# - capacity: productive capacity utilization\n");
     toml.push_str("# - investment: gross fixed capital formation level\n");
     toml.push_str("# - labour_absorption: employment intensity\n");
@@ -331,16 +356,27 @@ fn generate_toml_report(
             .get(&instrument)
             .copied()
             .unwrap_or(0.0);
-        toml.push_str(&format!("{instrument:?} = {score:.6}\n"));
+        #[allow(clippy::use_debug)]
+        {
+            toml.push_str(&format!("{instrument:?} = {score:.6}\n"));
+        }
     }
     if policy.constraint_violations.is_empty() {
         toml.push_str("constraint_violations = []\n");
     } else {
-        toml.push_str(&format!("constraint_violations = {:?}\n", policy.constraint_violations));
+        #[allow(clippy::use_debug)]
+        {
+            toml.push_str(&format!(
+                "constraint_violations = {:?}\n",
+                policy.constraint_violations
+            ));
+        }
     }
     toml.push_str("\n");
 
-    toml.push_str("# Backtest metrics: rolling out-of-sample evaluation against a naive baseline model.\n");
+    toml.push_str(
+        "# Backtest metrics: rolling out-of-sample evaluation against a naive baseline model.\n",
+    );
     toml.push_str("# - rmse: root mean squared error\n");
     toml.push_str("# - mae: mean absolute error\n");
     toml.push_str("# - calibration_score: reliability of probabilistic forecasts\n");
@@ -349,7 +385,10 @@ fn generate_toml_report(
     toml.push_str("[backtest]\n");
     toml.push_str(&format!("rmse = {:.6}\n", metrics.rmse));
     toml.push_str(&format!("mae = {:.6}\n", metrics.mae));
-    toml.push_str(&format!("calibration_score = {:.6}\n", metrics.calibration_score));
+    toml.push_str(&format!(
+        "calibration_score = {:.6}\n",
+        metrics.calibration_score
+    ));
     toml.push_str(&format!("brier_score = {:.6}\n", metrics.brier_score));
     toml.push_str(&format!("log_loss = {:.6}\n", metrics.log_loss));
 
@@ -357,6 +396,13 @@ fn generate_toml_report(
     Ok(())
 }
 
+#[allow(
+    clippy::too_many_lines,
+    clippy::too_many_arguments,
+    clippy::single_char_add_str,
+    clippy::format_push_string
+)]
+// TETANUS-exempt(power10-04): report generator is I/O formatting, not control logic; refactoring to 60-line functions is low-value
 fn generate_txt_report(
     path: &str,
     seed: u64,
@@ -380,7 +426,11 @@ fn generate_txt_report(
     txt.push_str("The faux dataset is a synthetically generated quarterly economic time series\n");
     txt.push_str("designed to exercise the full PRV pipeline. It combines cyclical patterns,\n");
     txt.push_str("Gaussian noise, cross-series coupling, and realistic bounds.\n\n");
-    txt.push_str(&format!("Loaded {} rows x {} columns.\n", df.row_count, df.columns.len()));
+    txt.push_str(&format!(
+        "Loaded {} rows x {} columns.\n",
+        df.row_count,
+        df.columns.len()
+    ));
     txt.push_str("Columns:\n");
     for col in &df.columns {
         let desc = match col.as_str() {
@@ -408,10 +458,15 @@ fn generate_txt_report(
 
     txt.push_str("Data Loading\n");
     txt.push_str(&format!("  Rows loaded: {}\n", df.row_count));
-    txt.push_str(&format!("  Observations generated: {}\n\n", observations.len()));
+    txt.push_str(&format!(
+        "  Observations generated: {}\n\n",
+        observations.len()
+    ));
 
     txt.push_str("EKF State Estimate\n");
-    txt.push_str("  The EKF produces an 8-dimensional latent state after ingesting all observations.\n");
+    txt.push_str(
+        "  The EKF produces an 8-dimensional latent state after ingesting all observations.\n",
+    );
     let dims = [
         ("capacity", "productive capacity utilization"),
         ("investment", "gross fixed capital formation level"),
@@ -452,22 +507,43 @@ fn generate_txt_report(
             .get(&instrument)
             .copied()
             .unwrap_or(0.0);
-        txt.push_str(&format!("  {instrument:?}: {score:.4}\n"));
+        #[allow(clippy::use_debug)]
+        {
+            txt.push_str(&format!("  {instrument:?}: {score:.4}\n"));
+        }
     }
     if policy.constraint_violations.is_empty() {
         txt.push_str("  Constraint violations: None\n");
     } else {
-        txt.push_str(&format!("  Constraint violations: {}\n", policy.constraint_violations.join(", ")));
+        txt.push_str(&format!(
+            "  Constraint violations: {}\n",
+            policy.constraint_violations.join(", ")
+        ));
     }
     txt.push_str("\n");
 
     txt.push_str("Backtest Metrics\n");
     txt.push_str("  Rolling out-of-sample evaluation against a naive baseline model.\n");
-    txt.push_str(&format!("  RMSE: {:.6}  # root mean squared error\n", metrics.rmse));
-    txt.push_str(&format!("  MAE: {:.6}  # mean absolute error\n", metrics.mae));
-    txt.push_str(&format!("  Calibration score: {:.6}  # reliability of probabilistic forecasts\n", metrics.calibration_score));
-    txt.push_str(&format!("  Brier score: {:.6}  # proper scoring rule for binary outcomes\n", metrics.brier_score));
-    txt.push_str(&format!("  Log loss: {:.6}  # logarithmic loss for probabilistic predictions\n", metrics.log_loss));
+    txt.push_str(&format!(
+        "  RMSE: {:.6}  # root mean squared error\n",
+        metrics.rmse
+    ));
+    txt.push_str(&format!(
+        "  MAE: {:.6}  # mean absolute error\n",
+        metrics.mae
+    ));
+    txt.push_str(&format!(
+        "  Calibration score: {:.6}  # reliability of probabilistic forecasts\n",
+        metrics.calibration_score
+    ));
+    txt.push_str(&format!(
+        "  Brier score: {:.6}  # proper scoring rule for binary outcomes\n",
+        metrics.brier_score
+    ));
+    txt.push_str(&format!(
+        "  Log loss: {:.6}  # logarithmic loss for probabilistic predictions\n",
+        metrics.log_loss
+    ));
     txt.push_str("\n");
     txt.push_str("Generated by prv-cli example run_pipeline.\n");
 
@@ -475,6 +551,13 @@ fn generate_txt_report(
     Ok(())
 }
 
+#[allow(
+    clippy::too_many_lines,
+    clippy::too_many_arguments,
+    clippy::single_char_add_str,
+    clippy::format_push_string
+)]
+// TETANUS-exempt(power10-04): report generator is I/O formatting, not control logic; refactoring to 60-line functions is low-value
 fn generate_docx_report(
     path: &str,
     seed: u64,
@@ -526,11 +609,21 @@ fn generate_docx_report(
     doc = doc
         .paragraph_with(|p| p.push_text("Pipeline Results"))
         .paragraph_with(|p| p.push_text("Data Loading"))
-        .paragraph_with(|p| p.push_text(format!("Rows loaded: {}. Observations generated: {}.", df.row_count, observations.len())));
+        .paragraph_with(|p| {
+            p.push_text(format!(
+                "Rows loaded: {}. Observations generated: {}.",
+                df.row_count,
+                observations.len()
+            ))
+        });
 
     doc = doc
         .paragraph_with(|p| p.push_text("EKF State Estimate"))
-        .paragraph_with(|p| p.push_text("The EKF produces an 8-dimensional latent state after ingesting all observations."));
+        .paragraph_with(|p| {
+            p.push_text(
+                "The EKF produces an 8-dimensional latent state after ingesting all observations.",
+            )
+        });
 
     let dims = [
         ("capacity", "productive capacity utilization"),
@@ -572,39 +665,72 @@ fn generate_docx_report(
             .get(&instrument)
             .copied()
             .unwrap_or(0.0);
-        doc = doc.paragraph_with(|p| p.push_text(format!("{instrument:?}: {score:.4}")));
+        #[allow(clippy::use_debug)]
+        {
+            doc = doc.paragraph_with(|p| p.push_text(format!("{instrument:?}: {score:.4}")));
+        }
     }
     if policy.constraint_violations.is_empty() {
         doc = doc.paragraph_with(|p| p.push_text("Constraint violations: None"));
     } else {
-        doc = doc.paragraph_with(|p| p.push_text(format!("Constraint violations: {}", policy.constraint_violations.join(", "))));
+        doc = doc.paragraph_with(|p| {
+            p.push_text(format!(
+                "Constraint violations: {}",
+                policy.constraint_violations.join(", ")
+            ))
+        });
     }
 
     doc = doc
         .paragraph_with(|p| p.push_text("Backtest Metrics"))
-        .paragraph_with(|p| p.push_text("Rolling out-of-sample evaluation against a naive baseline model."))
-        .paragraph_with(|p| p.push_text(format!("RMSE: {:.6}  # root mean squared error", metrics.rmse)))
+        .paragraph_with(|p| {
+            p.push_text("Rolling out-of-sample evaluation against a naive baseline model.")
+        })
+        .paragraph_with(|p| {
+            p.push_text(format!(
+                "RMSE: {:.6}  # root mean squared error",
+                metrics.rmse
+            ))
+        })
         .paragraph_with(|p| p.push_text(format!("MAE: {:.6}  # mean absolute error", metrics.mae)))
-        .paragraph_with(|p| p.push_text(format!("Calibration score: {:.6}  # reliability of probabilistic forecasts", metrics.calibration_score)))
-        .paragraph_with(|p| p.push_text(format!("Brier score: {:.6}  # proper scoring rule for binary outcomes", metrics.brier_score)))
-        .paragraph_with(|p| p.push_text(format!("Log loss: {:.6}  # logarithmic loss for probabilistic predictions", metrics.log_loss)))
+        .paragraph_with(|p| {
+            p.push_text(format!(
+                "Calibration score: {:.6}  # reliability of probabilistic forecasts",
+                metrics.calibration_score
+            ))
+        })
+        .paragraph_with(|p| {
+            p.push_text(format!(
+                "Brier score: {:.6}  # proper scoring rule for binary outcomes",
+                metrics.brier_score
+            ))
+        })
+        .paragraph_with(|p| {
+            p.push_text(format!(
+                "Log loss: {:.6}  # logarithmic loss for probabilistic predictions",
+                metrics.log_loss
+            ))
+        })
         .paragraph_with(|p| p.push_text(""))
         .paragraph_with(|p| p.push_text("Generated by prv-cli example run_pipeline."));
 
-    doc.write_file(path)
-        .map_err(std::io::Error::other)?;
+    doc.write_file(path).map_err(std::io::Error::other)?;
     Ok(())
 }
 
 fn print_usage() {
     println!("Usage: run_pipeline [OPTIONS]\n");
     println!("Options:");
-    println!("  --save <PATH>     Save report to PATH (format auto-detected from extension: md, txt, toml, docx)");
+    println!(
+        "  --save <PATH>     Save report to PATH (format auto-detected from extension: md, txt, toml, docx)"
+    );
     println!("  --seed <N>        Random seed for data generation (default: 42)");
     println!("  --rows <N>        Number of faux data rows to generate (default: 20, min: 4)");
     println!("  --help            Print this help message");
 }
 
+#[allow(clippy::too_many_lines)]
+// TETANUS-exempt(power10-04): main() is the example entry point; splitting into sub-functions would obscure the linear pipeline flow for readers
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let mut save_path = None;
@@ -654,6 +780,7 @@ fn main() {
         i += 1;
     }
 
+    #[allow(clippy::expect_used)]
     let project_root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .expect("crates/cli has a parent")
@@ -661,6 +788,7 @@ fn main() {
         .expect("crates has a parent")
         .to_path_buf();
     let data_path = project_root.join("examples/faux_data.csv");
+    #[allow(clippy::expect_used)]
     let data_path_str = data_path.to_str().expect("valid UTF-8 path");
 
     if save_path.is_none() {
@@ -688,7 +816,10 @@ fn main() {
             df.row_count,
             df.columns.len()
         );
-        println!("Columns: {:?}\n", df.columns);
+        #[allow(clippy::use_debug)]
+        {
+            println!("Columns: {:?}\n", df.columns);
+        }
     }
 
     let observations = match loader.to_observations(&df) {
@@ -716,7 +847,9 @@ fn main() {
     );
 
     for obs in &observations {
+        #[allow(clippy::let_underscore_must_use)]
         let _ = ekf.predict(None);
+        #[allow(clippy::let_underscore_must_use)]
         let _ = ekf.update(obs);
     }
 
@@ -737,6 +870,7 @@ fn main() {
         },
     ];
 
+    #[allow(clippy::expect_used)]
     let mc = Simulator::new(42)
         .simulate(&mean, &covariance, 100, 8, &shocks)
         .expect("Monte Carlo simulation");
@@ -756,15 +890,24 @@ fn main() {
     let results = evaluator.backtest(&NaiveRegime, &ts, 4);
 
     if save_path.is_none() {
-        println!("Final EKF state: {:?}", ekf.x_hat.as_vector().transpose());
-        println!(
-            "Monte Carlo mean state: {:?}\n",
-            mc.mean.as_vector().transpose()
-        );
-        println!(
-            "Policy recommended actions: {:?}\n",
-            policy.recommended_action_distribution
-        );
+        #[allow(clippy::use_debug)]
+        {
+            println!("Final EKF state: {:?}", ekf.x_hat.as_vector().transpose());
+        }
+        #[allow(clippy::use_debug)]
+        {
+            println!(
+                "Monte Carlo mean state: {:?}\n",
+                mc.mean.as_vector().transpose()
+            );
+        }
+        #[allow(clippy::use_debug)]
+        {
+            println!(
+                "Policy recommended actions: {:?}\n",
+                policy.recommended_action_distribution
+            );
+        }
         println!(
             "Backtest metrics: RMSE={:.4}, MAE={:.4}\n",
             results.metrics.rmse, results.metrics.mae
