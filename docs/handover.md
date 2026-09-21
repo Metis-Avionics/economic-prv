@@ -43,4 +43,4 @@ None.
 
 ## Next Action
 
-Prepare PR2: bump workspace versions, publish to crates.io, verify quality gates on clean branch
+Create PR2 on GitHub from faux-pipeline branch

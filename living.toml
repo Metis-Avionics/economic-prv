@@ -55,6 +55,7 @@ completed = [
     { id = "C34", description = "Updated AGENTS.md with Quality Gates section", timestamp = "2026-09-20T22:30:00+01:00" },
     { id = "C35", description = "Fixed DataLoader::load_historical to skip non-numeric 'quarter' column during CSV float parsing", timestamp = "2026-09-21T01:10:00+01:00" },
     { id = "C36", description = "Verified full pipeline example (cargo run --example run_pipeline -p prv-cli) executes end-to-end with faux_data.csv", timestamp = "2026-09-21T01:12:00+01:00" },
+    { id = "C37", description = "Published all 9 workspace crates to crates.io as prv-*-0.2.0", timestamp = "2026-09-21T01:18:00+01:00" },
 ]
 changed = [
     "crates/core/src/prv.rs — added PressureReleaseValve tests (value, zero capacity, positive)",
@@ -80,9 +81,11 @@ validated = [
     { id = "V6", description = "cargo test --workspace: 72 tests pass", timestamp = "2026-09-20T21:41:00+01:00" },
     { id = "V7", description = "cargo deny check passes (advisories, bans, licenses, sources)", timestamp = "2026-09-20T22:30:00+01:00" },
     { id = "V8", description = "tetanus-check.py passes with 0 errors", timestamp = "2026-09-20T22:30:00+01:00" },
+    { id = "V9", description = "cargo publish --dry-run passes for all 9 crates", timestamp = "2026-09-21T01:17:00+01:00" },
+    { id = "V10", description = "All 9 crates published to crates.io as v0.2.0", timestamp = "2026-09-21T01:19:00+01:00" },
 ]
 known_failures = []
-next_action = "Prepare PR2: bump workspace versions, publish to crates.io, verify quality gates on clean branch"
+next_action = "Create PR2 on GitHub from faux-pipeline branch"
 open_questions = []
 
 [changelog]
@@ -109,4 +112,6 @@ entries = [
     { type = "ci_added", description = "Created .github/workflows/ci.yml with all quality gates", timestamp = "2026-09-20T22:30:00+01:00" },
     { type = "loader_fix", description = "Fixed DataLoader::load_historical to skip 'quarter' column; pipeline example now runs end-to-end", timestamp = "2026-09-21T01:10:00+01:00" },
     { type = "example_fix", description = "Fixed prv-cli run_pipeline example: unused import, clippy allows, workspace deps in cli/Cargo.toml", timestamp = "2026-09-21T01:10:00+01:00" },
+    { type = "version_bump", description = "Bumped workspace version from 0.1.0 to 0.2.0 for PR2", timestamp = "2026-09-21T01:19:00+01:00" },
+    { type = "crates_io_publish", description = "Published all 9 workspace crates to crates.io as v0.2.0", timestamp = "2026-09-21T01:19:00+01:00" },
 ]
