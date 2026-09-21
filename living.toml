@@ -70,7 +70,8 @@ completed = [
       { id = "C49", description = "Bumped workspace version 0.2.0 -> 0.2.1 in Cargo.toml and spec.toml", timestamp = "2026-09-21T03:11:00+01:00" },
       { id = "C50", description = "Created git tag v0.2.1 and pushed to origin", timestamp = "2026-09-21T03:43:00+01:00" },
       { id = "C51", description = "Created GitHub release v0.2.1 with PR2 review fixes summary", timestamp = "2026-09-21T03:43:00+01:00" },
-      { id = "C52", description = "Published all 9 workspace crates to crates.io as v0.2.1", timestamp = "2026-09-21T03:43:00+01:00" },
+       { id = "C52", description = "Published all 9 workspace crates to crates.io as v0.2.1", timestamp = "2026-09-21T03:43:00+01:00" },
+       { id = "C53", description = "PR #2 merged: all quality gates green, release complete", timestamp = "2026-09-21T03:51:00+01:00" },
 ]
 changed = [
     "crates/core/src/prv.rs — added PressureReleaseValve tests (value, zero capacity, positive)",
@@ -115,10 +116,11 @@ validated = [
      { id = "V17", description = "publish-next-crate.sh includes prv-cache in release ordering", timestamp = "2026-09-21T02:55:00+01:00" },
       { id = "V18", description = "CI workflow added crates.io publication verification step on tags", timestamp = "2026-09-21T02:55:00+01:00" },
       { id = "V19", description = "Created GitHub release v0.2.1 at https://github.com/Metis-Avionics/economic-prv/releases/tag/v0.2.1", timestamp = "2026-09-21T03:43:00+01:00" },
-      { id = "V20", description = "Published all 9 workspace crates to crates.io as v0.2.1", timestamp = "2026-09-21T03:43:00+01:00" },
+       { id = "V20", description = "Published all 9 workspace crates to crates.io as v0.2.1", timestamp = "2026-09-21T03:43:00+01:00" },
+       { id = "V21", description = "PR #2 merged into master with adversarial review; release v0.2.1 live on GitHub and crates.io", timestamp = "2026-09-21T03:51:00+01:00" },
 ]
 known_failures = []
-next_action = "Merge PR2 after adversarial review; no further release action pending"
+next_action = "Monitor CI on master; no further action pending"
 open_questions = []
 
 [changelog]
