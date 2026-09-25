@@ -42,6 +42,16 @@ let cached = cache.get(&key, &ctx).await?;
 - `serde` / `serde_json` — snapshot serialization
 - `tracing` — telemetry
 
+## Lock audit
+
+Audited 2026-09-25: first-party `crates/` contain zero `RwLock` / `Mutex` /
+`parking_lot` in code — read-heavy shared maps (`CacheStats`, `KeyIndex`) use
+`dashmap::DashMap`; `Arc` handles are shared ownership, not locks; remaining
+`HashMap`s are thread-local and intentionally not `DashMap`. Upstream `thesix`
+(`RwLock<TierHealth>`, `Mutex<Shard>`) and `themql-cache`
+(`Mutex<LruCache>`, LRU eviction needs exclusive ordering) are documented as
+wont-fix. Enforced by `scripts/check_no_coarse_locks.sh` in CI.
+
 ## License
 
 MIT © Metis Avionics

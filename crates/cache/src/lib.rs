@@ -8,6 +8,9 @@
 //!
 //! - [`CacheStats`]: per-namespace operation counters.
 //! - [`KeyIndex`]: key → subject index for pattern-scoped lookups.
+//!
+//! Lock audit (2026-09-25): first-party `crates/` hold zero `RwLock` / `Mutex`
+//! in code; enforced by `scripts/check_no_coarse_locks.sh` in CI.
 
 pub mod index;
 pub mod keys;
