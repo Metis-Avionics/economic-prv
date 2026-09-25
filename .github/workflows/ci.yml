@@ -42,6 +42,9 @@ jobs:
       - name: Schema sketch check
         run: bash scripts/check_schema.sh
 
+      - name: Coarse lock audit (DashMap policy)
+        run: bash scripts/check_no_coarse_locks.sh
+
       - name: Install cargo-deny
         run: |
           if ! command -v cargo-deny >/dev/null 2>&1; then
