@@ -1,0 +1,15 @@
+[package]
+name = "prv-optimizer"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Deterministic constrained trajectory optimization for the prv workspace"
+
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

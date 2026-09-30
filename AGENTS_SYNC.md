@@ -147,6 +147,9 @@ Each agent declares its current and planned work here before touching files.
 - Task: pin the Rust toolchain to 1.98.1 and stop CI floating on `stable`
 - Outcome: `rust-toolchain.toml` added; CI switched to the same pin; `scripts/check-toolchain-pin.sh` asserts the two agree
 - Files touched: `rust-toolchain.toml` (new), `scripts/check-toolchain-pin.sh` (new), `.github/workflows/ci.yml`, `living.toml`
-- Conflicts / overlaps: resolved on rebase onto master — both PRs appended to this log, so both entries are kept and de-conflicted here
 - Follow-up (resolved): this branch noted that master CI was red because `cargo machete` found 7 unused deps in `prv-policy`, `prv-geometry` and `prv-data`. That debt was cleared separately in #6 (20 unused deps across 8 crates, merged 2026-09-30T18:00:48Z), so the pin and the machete gate are now both green on master.
-
+- Task: add the two upstream gaps a downstream risk-control calculus needs — tail-risk measures and a domain-neutral trajectory optimizer
+- Outcome: `prv-evaluation` gains `value_at_risk` / `expected_shortfall`; new `prv-optimizer` crate (10th) with 19 behavioural tests; `specs/optimizer.toml` records why `prv-policy` cannot express a caller-supplied objective
+- Files touched: `crates/evaluation/src/tail.rs` (new), `crates/evaluation/src/lib.rs`, `crates/optimizer/**` (new), `Cargo.toml`, `tetanus.toml`, `specs/optimizer.toml`, `living.toml`
+- Conflicts / overlaps: none. `prv-core` was deliberately NOT touched — extending `PrvError` would be a breaking change to a public enum, and a downstream workspace pins `prv-core = "0.2.1"` by minor version, so each new crate declares its own error type instead
+- Follow-up: the step-size precondition (`step_size < 2 / curvature`) is documented and a diverging step is *reported* rather than returned, but there is no backtracking line search. Adding one is a natural follow-up rather than a gap for a first version

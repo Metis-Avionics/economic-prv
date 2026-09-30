@@ -1,9 +1,11 @@
 [handover]
 status = "implementation"
 phase = "testing_and_cli_hardening"
-last_updated = "2026-09-30T18:05:00+01:00"
-summary = "All quality gates green: fmt clean, clippy 0 errors (0 warnings in workspace), 77 tests pass, TETANUS 0 errors/0 warnings, cargo deny check ok. Multi-format report export (--save) implemented and verified for markdown, txt, toml, and docx formats. Fixed all 24 clippy warnings in run_pipeline.rs example. Ready for 0.2.1 release."
+last_updated = "2026-09-30T18:10:00+01:00"
+summary = "111 tests pass across 10 crates. fmt clean, clippy --workspace --all-targets -D warnings clean, TETANUS 0 errors/0 warnings, cargo deny advisories/bans/licenses/sources all ok, cargo machete exits 0. Three changes landed this session, all merged to master. (1) Toolchain pinned to 1.98.1 in both rust-toolchain.toml and CI, with scripts/check-toolchain-pin.sh asserting they agree. (2) 20 unused dependencies removed across 8 crates, clearing the cargo machete gate that had been red since 2026-09-21 - the two apparent references in prv-cli were prose inside string literals, and two prv-evaluation entries used the path = \"../x\" manifest form rather than workspace = true which the first pass silently skipped. (3) Two new capabilities for a downstream risk-control calculus that prv-policy cannot serve, because its instrument enum and weight struct are closed, its evaluate() has no time dimension, and it has no budget/capacity/horizon constraint: prv-evaluation gained value_at_risk and expected_shortfall (CVaR) as Result-shaped measures rather than NaN, and prv-optimizer is a new domain-neutral deterministic constrained trajectory optimizer."
 remaining = [
+    "scripts/check_no_coarse_locks.sh on the chore/coarse-lock-audit branch hard-depends on rg, which the GitHub runner lacks. A missing tool makes the search return empty, and the script then reports files as clean - it fails OPEN. Needs a fail-closed fix and a decision on whose branch it lands",
+    "prv-optimizer has no backtracking line search, so step_size must satisfy step_size < 2 / curvature by hand. A violating step is reported as a non-finite objective rather than returned, but a line search would make it robust",
     "Add specs/parallelism.toml for Apalis/Rayon optimization targets (no spec entry → out of scope until added)",
     "Add specs/helixdb.toml and schema for live HelixDB testing (no spec entry → out of scope until added)",
 ]
@@ -17,6 +19,8 @@ decisions = [
     { id = "D7", description = "CLI living update reads from living.toml + spec.toml + specs/*.toml instead of hardcoding", timestamp = "2026-09-20T21:30:00+01:00" },
     { id = "D8", description = "to_observations returns first 10 required columns as 10-dim Observation vector", timestamp = "2026-09-20T21:41:00+01:00" },
     { id = "D10", description = "Toolchain pinned to 1.98.1 in both rust-toolchain.toml and CI; a pin only one of the two knows about is not a pin, so scripts/check-toolchain-pin.sh asserts they agree", timestamp = "2026-09-30T16:25:00+01:00" },
+    { id = "D11", description = "prv-optimizer is domain-neutral on purpose: the missing capability was a generic optimizer, not a better policy engine, so the caller supplies the objective and the crate supplies the machinery", timestamp = "2026-09-30T17:40:00+01:00" },
+    { id = "D12", description = "Tail-risk measures return Result rather than NaN. Every comparison against NaN is false, so a NaN expected shortfall makes a `risk > limit` gate evaluate to `do not block` - a risk gate that fails open is worse than none because it is trusted", timestamp = "2026-09-30T17:40:00+01:00" },
     { id = "D9", description = "DataLoader::load_historical skips 'quarter' header column by name during float parsing", timestamp = "2026-09-21T01:10:00+01:00" },
 ]
 completed = [
@@ -127,6 +131,9 @@ open_questions = []
 [changelog]
 entries = [
     { type = "deps_removed", description = "Removed 20 unused dependencies across prv-policy, prv-geometry, prv-data, prv-cache, prv-filter, prv-evaluation, prv-cli, prv-monte-carlo; cargo machete now exits 0, unblocking the master CI gate that had been red since 2026-09-21", timestamp = "2026-09-30T18:05:00+01:00" },
+    { type = "tail_risk_added", description = "prv-evaluation: value_at_risk and expected_shortfall (CVaR) as Result-shaped measures that report a non-finite loss instead of returning NaN", timestamp = "2026-09-30T17:40:00+01:00" },
+    { type = "crate_added", description = "prv-optimizer: deterministic constrained trajectory optimizer (projected gradient + box/half-space projection), domain-neutral, with Infeasible and NonConvergent as reported states", timestamp = "2026-09-30T17:40:00+01:00" },
+    { type = "spec_created", description = "specs/optimizer.toml recording why prv-policy cannot express a caller-supplied objective and what this crate does and does not own", timestamp = "2026-09-30T17:40:00+01:00" },
     { type = "toolchain_pinned", description = "Added rust-toolchain.toml pinning 1.98.1 and switched CI from floating `stable` to the same pin; scripts/check-toolchain-pin.sh asserts the two agree", timestamp = "2026-09-30T16:25:00+01:00" },
 
     { type = "spec_created", description = "Initial spec.toml with verified dependencies", timestamp = "2026-09-20T18:38:20+01:00" },

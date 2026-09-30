@@ -1204,6 +1204,7 @@ dependencies = [
  "prv-monte-carlo",
  "prv-policy",
  "serde",
+ "thiserror",
 ]
 
 [[package]]
@@ -1235,6 +1236,14 @@ dependencies = [
  "rand",
  "rand_distr",
  "serde",
+]
+
+[[package]]
+name = "prv-optimizer"
+version = "0.2.1"
+dependencies = [
+ "serde",
+ "thiserror",
 ]
 
 [[package]]

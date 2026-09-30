@@ -1,0 +1,162 @@
+# prv-optimizer — constrained trajectory optimization
+#
+# Authoritative contract for crates/optimizer. Read with spec.toml and
+# state_model.toml (which defines the 8-dimensional state this crate
+# deliberately does not know about).
+#
+# Purpose: a domain-neutral, deterministic optimizer for the shape
+#
+#     minimize f(u)   subject to   lower <= u <= upper
+#                                 a . u <= b   for each linear constraint
+#
+# where u is a decision trajectory over n periods and f is supplied by the
+# caller. It is NOT a domain model and holds no opinion about what is being
+# scheduled.
+
+[subsystem]
+name = "optimizer"
+crate = "prv-optimizer"
+type = "numerical_optimizer"
+status = "implemented"
+deterministic = true
+rng_used = false
+
+[why_this_exists]
+# prv-policy is a macroeconomic instrument scorer, not an optimizer. Its
+# limitations are recorded in specs/policy_engine.toml and were verified
+# against the released 0.2.1 source:
+#
+#   - `PolicyInstrument` is a CLOSED 7-variant enum
+#     (InterestRate .. MigrationCapacity). There is no variant for a
+#     caller-supplied decision, and an enum cannot be extended by a consumer.
+#   - `PolicyWeights` is a CLOSED 7-field struct. There is no field for a
+#     caller-supplied objective weight, so "cost + lambda * risk +
+#     mu * impact" cannot be expressed.
+#   - `evaluate` returns a static `HashMap<PolicyInstrument, f64>`. There is no
+#     time dimension, so there is no trajectory and no schedule.
+#   - `check_constraints` tests two hardcoded macroeconomic thresholds. There is
+#     no budget, capacity, or horizon constraint.
+#
+# So the missing capability is not a better policy engine; it is a generic
+# optimizer. This crate supplies the machinery and the caller supplies the
+# semantics. Putting the domain concepts here instead would make the crate
+# unusable for the next domain and would couple consumers to vocabulary they
+# did not choose.
+
+[boundary]
+owns = [
+    "trajectory representation",
+    "box bounds",
+    "linear inequality constraints",
+    "projection onto the feasible set",
+    "convergence and infeasibility reporting",
+]
+does_not_own = [
+    "the objective function (caller supplies it)",
+    "what a period's value means",
+    "units or dimensions of the decision variable",
+    "any macroeconomic, financial, or cyber-risk vocabulary",
+]
+depends_on = []
+# Deliberately dependency-free beyond serde/thiserror. No nalgebra, no ndarray:
+# the arithmetic is n-dimensional dot products and projections, and pulling in
+# a linear-algebra stack for that would cost build time on every consumer and
+# buy nothing.
+
+[api]
+[api.trajectory]
+description = "Decision variable sampled on a discrete grid of n periods."
+ordered = true
+# Higher or lower is not interpreted. The optimizer treats it as an ordered
+# vector; what a value means is the caller's business.
+
+[api.bounds]
+shape = "per-period box, lower[i] <= u[i] <= upper[i]"
+infinities_allowed = true
+# +/-inf is the encoding of "unbounded on this side", which is how
+# `Bounds::unbounded` is built. NaN is rejected: clamping against NaN
+# propagates it and silently destroys the projection.
+
+[api.constraint]
+form = "coeffs . u <= rhs"
+carries_id = true
+# The id exists so an infeasibility report names WHICH constraint conflicted,
+# rather than reporting a bare violation count.
+
+[api.objective]
+trait = "Objective"
+required_methods = ["value", "gradient"]
+caller_supplied = true
+# The optimizer never differentiates anything itself, so it cannot disagree
+# with the caller about what the objective is.
+
+[api.weighted_objective]
+form = "sum_i weight_i * term_i(u)"
+weights = "caller-defined, any f64"
+# This is the shape of "a cost, a risk, and an implementation penalty", but the
+# crate does not name them. The terms and weights are the caller's.
+
+[method]
+algorithm = "projected gradient descent"
+projection = "box, then cyclic projection onto each linear half-space"
+feasibility = "verified after the fact, not assumed"
+stationarity_measure = "norm of the projected gradient step"
+
+[invariants]
+determinism = "identical inputs give bit-identical output; there is no RNG, so a result needs no seed to reproduce"
+bounded = "max_iterations is a configured ceiling; the loop cannot run longer"
+no_silent_relaxation = "a constraint still violated beyond tolerance yields Infeasible, never a quietly dropped constraint"
+feasibility_before_convergence = "violations are checked before the convergence verdict, so an infeasible problem never reports Optimal"
+infeasibility_is_a_state = "returned as OptimizationOutcome::Infeasible with the offending ids, not panicked on"
+non_convergence_is_a_state = "returned as OptimizationOutcome::NonConvergent with the last iterate"
+infeasible_has_no_trajectory = "OptimizationOutcome::trajectory() returns None, so a caller cannot mistake a contradiction for an answer"
+divergence_is_reported = "a non-finite objective value, or a gradient of the wrong length, is an error rather than a plausible-looking result"
+zero_weight_is_inert = "a term weighted 0.0 contributes exactly nothing, so 'switch this risk off' is not a lie"
+singleton_feasible_set_is_solvable = "zero-width bounds are a valid degenerate case, not an error"
+
+[failure_modes]
+policy = "fail_explicitly"
+cases = [
+    "empty_trajectory",
+    "length_mismatch_between_bounds_trajectory_or_gradient",
+    "empty_bounds_at_a_period",
+    "nan_in_trajectory_bound_rhs_or_coefficient",
+    "infeasible_constraint_set",
+    "contradictory_constraints",
+    "degenerate_constraint_that_can_never_bind",
+    "non_convergence",
+    "divergent_step_size",
+    "invalid_solver_configuration",
+]
+
+[quality.gates]
+required = [
+    "cargo fmt --all -- --check",
+    "cargo clippy --workspace --all-targets -- -D warnings",
+    "cargo test --workspace",
+    "python3 scripts/tetanus-check.py",
+    "cargo deny check",
+    "cargo machete",
+]
+tier = "advisory"
+tier_note = "Listed under [scope].advisory in tetanus.toml alongside the other non-strict crates."
+
+[testing]
+strategy = "behavioural, one test per relied-upon property"
+categories = [
+    "analytic correctness against a hand-computed minimizer",
+    "feasibility under box and linear constraints",
+    "infeasibility reported with constraint ids",
+    "determinism at bit level",
+    "weight monotonicity (does raising a term's weight move the solution toward it?)",
+    "non-convergence and divergence as reported states",
+    "input validation per constructor",
+]
+determinism_test = "two runs on rebuilt Problems are compared with to_bits(), not =="
+
+[references]
+upstream = []
+consumers = []
+# Populated by downstream workspaces that adopt this crate. economic-prv does
+# not depend on its own consumers, and a consumer-specific note here would rot
+# the moment the consumer's own spec changes.
