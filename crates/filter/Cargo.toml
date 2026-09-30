@@ -10,9 +10,7 @@ description = "Extended Kalman Filter (EKF) and observation/transition models fo
 [dependencies]
 prv-core = { path = "../core", version = "0.2.0" }
 nalgebra.workspace = true
-serde.workspace = true
 thiserror.workspace = true
-tracing.workspace = true
 
 [lints]
 workspace = true

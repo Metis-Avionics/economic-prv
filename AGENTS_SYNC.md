@@ -135,3 +135,12 @@ Each agent declares its current and planned work here before touching files.
 6. **Emergency brake:** If both agents edit the same file simultaneously and
    `git diff` shows overlapping hunks, STOP. Do not force-push. Coordinate
    via the shared terminal, then re-apply changes sequentially.
+
+### 2026-09-30 — opencode/space-bunny-free
+
+- Subagent(s): none
+- Task: clear the `cargo machete` gate on master, which had been red since 2026-09-21
+- Outcome: 20 unused dependencies removed across 8 crates; `cargo machete` exits 0
+- Files touched: `crates/{policy,geometry,data,cache,filter,evaluation,cli,monte-carlo}/Cargo.toml`, `Cargo.lock`, `living.toml`
+- Conflicts / overlaps: none
+- Note: machete reports one crate at a time, so this took several passes. Two apparent "references" in prv-cli turned out to be prose inside string literals — a `println!` listing crate names and a help-text string naming serde — and two prv-evaluation entries used the `path = "../x"` manifest form rather than `workspace = true`, which the first removal pass silently skipped. `cargo check --workspace --all-targets` was the authority on every removal.

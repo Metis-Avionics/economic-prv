@@ -11,12 +11,9 @@ description = "Monte Carlo shock simulation and probability estimation for the p
 prv-core = { path = "../core", version = "0.2.0" }
 prv-filter = { path = "../filter", version = "0.2.0" }
 nalgebra.workspace = true
-ndarray.workspace = true
 rand.workspace = true
 rand_distr.workspace = true
 serde.workspace = true
-thiserror.workspace = true
-tracing.workspace = true
 
 [lints]
 workspace = true
