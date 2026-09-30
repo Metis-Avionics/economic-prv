@@ -1,0 +1,17 @@
+# The toolchain the workspace is developed and gated on.
+#
+# Pinned rather than floating, and deliberately so. `channel = "stable"` means
+# the compiler changes underneath the repository: a new stable release turns a
+# green branch red with no diff in it, and clippy's lint set moves between
+# releases. That failure mode is expensive to diagnose because the diff that
+# caused it is not in your tree — it is in a version bump you did not make.
+#
+# 1.98.1 is what CI installs (see .github/workflows/ci.yml) and what the
+# downstream DeGoyle workspace pins, so crates published from here are built by
+# the same compiler their largest consumer uses.
+#
+# scripts/check-toolchain-pin.sh asserts this file and the CI workflow agree.
+# A pin that only one of the two knows about is not a pin.
+[toolchain]
+channel = "1.98.1"
+components = ["rustfmt", "clippy"]

@@ -16,6 +16,7 @@ decisions = [
     { id = "D6", description = "ObservationModel trait generic over const D for dataset-dependent dimensions", timestamp = "2026-09-20T18:38:20+01:00" },
     { id = "D7", description = "CLI living update reads from living.toml + spec.toml + specs/*.toml instead of hardcoding", timestamp = "2026-09-20T21:30:00+01:00" },
     { id = "D8", description = "to_observations returns first 10 required columns as 10-dim Observation vector", timestamp = "2026-09-20T21:41:00+01:00" },
+    { id = "D10", description = "Toolchain pinned to 1.98.1 in both rust-toolchain.toml and CI; a pin only one of the two knows about is not a pin, so scripts/check-toolchain-pin.sh asserts they agree", timestamp = "2026-09-30T16:25:00+01:00" },
     { id = "D9", description = "DataLoader::load_historical skips 'quarter' header column by name during float parsing", timestamp = "2026-09-21T01:10:00+01:00" },
 ]
 completed = [
@@ -126,6 +127,8 @@ open_questions = []
 [changelog]
 entries = [
     { type = "deps_removed", description = "Removed 20 unused dependencies across prv-policy, prv-geometry, prv-data, prv-cache, prv-filter, prv-evaluation, prv-cli, prv-monte-carlo; cargo machete now exits 0, unblocking the master CI gate that had been red since 2026-09-21", timestamp = "2026-09-30T18:05:00+01:00" },
+    { type = "toolchain_pinned", description = "Added rust-toolchain.toml pinning 1.98.1 and switched CI from floating `stable` to the same pin; scripts/check-toolchain-pin.sh asserts the two agree", timestamp = "2026-09-30T16:25:00+01:00" },
+
     { type = "spec_created", description = "Initial spec.toml with verified dependencies", timestamp = "2026-09-20T18:38:20+01:00" },
     { type = "dependency_resolved", description = "theSix -> thesix 0.2.3 (crates.io)", timestamp = "2026-09-20T18:38:20+01:00" },
     { type = "dependency_resolved", description = "theMQL -> themql-runtime 0.1.0 + themql-core (crates.io)", timestamp = "2026-09-20T18:38:20+01:00" },

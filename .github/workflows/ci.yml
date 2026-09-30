@@ -18,11 +18,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Pinned, not `stable`. The version is asserted against
+      # rust-toolchain.toml by scripts/check-toolchain-pin.sh, so the two
+      # cannot drift. A floating toolchain here means a stable release can
+      # redden this build with no change in the repository.
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: 1.98.1
           components: clippy, rustfmt
+
+      - name: Toolchain pin is consistent
+        run: bash scripts/check-toolchain-pin.sh
 
       - name: Fetch dependencies
         run: cargo fetch --locked

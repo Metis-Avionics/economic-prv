@@ -144,3 +144,9 @@ Each agent declares its current and planned work here before touching files.
 - Files touched: `crates/{policy,geometry,data,cache,filter,evaluation,cli,monte-carlo}/Cargo.toml`, `Cargo.lock`, `living.toml`
 - Conflicts / overlaps: none
 - Note: machete reports one crate at a time, so this took several passes. Two apparent "references" in prv-cli turned out to be prose inside string literals — a `println!` listing crate names and a help-text string naming serde — and two prv-evaluation entries used the `path = "../x"` manifest form rather than `workspace = true`, which the first removal pass silently skipped. `cargo check --workspace --all-targets` was the authority on every removal.
+- Task: pin the Rust toolchain to 1.98.1 and stop CI floating on `stable`
+- Outcome: `rust-toolchain.toml` added; CI switched to the same pin; `scripts/check-toolchain-pin.sh` asserts the two agree
+- Files touched: `rust-toolchain.toml` (new), `scripts/check-toolchain-pin.sh` (new), `.github/workflows/ci.yml`, `living.toml`
+- Conflicts / overlaps: resolved on rebase onto master — both PRs appended to this log, so both entries are kept and de-conflicted here
+- Follow-up (resolved): this branch noted that master CI was red because `cargo machete` found 7 unused deps in `prv-policy`, `prv-geometry` and `prv-data`. That debt was cleared separately in #6 (20 unused deps across 8 crates, merged 2026-09-30T18:00:48Z), so the pin and the machete gate are now both green on master.
+
