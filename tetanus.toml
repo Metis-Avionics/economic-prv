@@ -38,7 +38,7 @@ checker = "scripts/tetanus-check.py"
 # --------------------------------------------------------------------------
 [scope]
 strict = ["crates/core", "crates/filter", "crates/monte_carlo", "crates/policy", "crates/geometry"]
-advisory = ["crates/data", "crates/evaluation", "crates/cli", "crates/cache"]
+advisory = ["crates/data", "crates/evaluation", "crates/cli", "crates/cache", "crates/optimizer"]
 
 # --------------------------------------------------------------------------
 # Tunables shared by clippy.toml and the checker. Keep the two in sync.

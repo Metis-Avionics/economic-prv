@@ -1238,6 +1238,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "prv-optimizer"
+version = "0.2.1"
+dependencies = [
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "prv-policy"
 version = "0.2.1"
 dependencies = [

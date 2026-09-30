@@ -10,6 +10,7 @@ members = [
     "crates/evaluation",
     "crates/cli",
     "crates/cache",
+    "crates/optimizer",
 ]
 
 [workspace.package]
