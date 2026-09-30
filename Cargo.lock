@@ -1204,6 +1204,7 @@ dependencies = [
  "prv-monte-carlo",
  "prv-policy",
  "serde",
+ "thiserror",
 ]
 
 [[package]]
