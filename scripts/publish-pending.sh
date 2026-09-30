@@ -101,7 +101,13 @@ print("\n".join(order))
 PY
 ) || die "cargo metadata failed"
 
-version_of() { cargo pkgid -p "$1" 2>/dev/null | sed 's/.*#\(.*\)$/\1/' | awk -F: '{print $NF}'; }
+# `cargo pkgid` yields `name@version` after the `#`; only the version is
+# comparable against the registry's `num` field. Stripping the name matters:
+# comparing `prv-core@0.2.1` against `0.2.1` never matches, so every published
+# crate looks pending and the script republishes the whole workspace.
+version_of() {
+  cargo pkgid -p "$1" 2>/dev/null | sed 's/.*#//; s/.*@//'
+}
 
 # --- is this exact version already public? ----------------------------------
 # Checks the version, not merely the crate: a crate can be published while the
@@ -118,6 +124,24 @@ except Exception:
     print('unknown')
 " "$version"
 }
+
+# --- rail 5: the probe verifies itself against a canary ---------------------
+# A probe that silently never matches is the most dangerous failure this script
+# could have: it makes every published crate look pending, and the script then
+# republishes the entire workspace. That is exactly the bug an earlier draft
+# had (a name-prefixed version string), and it produced a dry run cheerfully
+# reporting ten already-published crates as pending.
+#
+# So before the probe is trusted, it must correctly report a version that is
+# definitionally on the registry. If it cannot, we stop rather than publish on
+# the strength of a measurement we know is wrong.
+CANARY_CRATE="serde"
+CANARY_VERSION="1.0.0"
+canary_state="$(on_registry "$CANARY_CRATE" "$CANARY_VERSION")"
+case "$canary_state" in
+  yes) : ;;
+  *) log "REFUSED: the registry probe reports ${CANARY_CRATE} ${CANARY_VERSION} as '${canary_state}', so it cannot be trusted to decide what is pending"; exit 2 ;;
+esac
 
 published=0
 for crate in "${MEMBERS[@]}"; do
